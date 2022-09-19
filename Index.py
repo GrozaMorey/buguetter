@@ -13,12 +13,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123@localhost/Use
 db = SQLAlchemy(app)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-DB_HOST = "localhost"
-DB_NAME = "User"
+DB_HOST = "containers-us-west-53.railway.app"
+DB_NAME = "railway"
 DB_USER = "postgres"
-DB_PASS = "123"
+DB_PASS = "WJk75v28XTSv2cczzwAN"
+DB_PORT = "7193"
+DB_TABLE = "users2"
 
-conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
+conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -47,7 +49,7 @@ def login():
         login = request.form['login']
         password = request.form['password']
 
-        cursor.execute("SELECT * FROM users WHERE login = '%s'" % login)
+        cursor.execute(f"SELECT * FROM {DB_TABLE} WHERE login = '%s'" % login)
         account = cursor.fetchone()
         print(account)
 
@@ -63,13 +65,13 @@ def register():
 
         _hashed_password = generate_password_hash(password)
 
-        cursor.execute("SELECT * FROM users WHERE login = '%s'" % login)
+        cursor.execute(f"SELECT * FROM {DB_TABLE} WHERE login = '%s'" % login)
         account = cursor.fetchone()
         if account:
             flash('Такой акк уже есть')
         else:
 
-            cursor.execute("INSERT INTO users (login, name, password) VALUES (%s,%s,%s)", (login, name, _hashed_password))
+            cursor.execute(f"INSERT INTO {DB_TABLE} (login, name, password) VALUES (%s,%s,%s)", (login, name, _hashed_password))
             conn.commit()
             flash("эЭЭ я тЕбя Зарегал жи ест")
 
