@@ -2,13 +2,15 @@ from flask import Flask, render_template, url_for, request, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 import psycopg2
 import psycopg2.extras
-from flask import session
+from flask import session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123@localhost/User'
 db = SQLAlchemy(app)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
+jwt = JWTManager(app)
 
 DB_HOST = "containers-us-west-53.railway.app"
 DB_NAME = "railway"
@@ -32,16 +34,27 @@ class User(db.Model):
         self.name = name
         self.password = password
 
+
 def cursor_select(column, arg):
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(f"SELECT * FROM {DB_TABLE} WHERE {column} = '{arg}'")
     account = cursor.fetchone()
     return account
 
-def add_user(name,login,_hashed_password):
+
+def add_user(name, login, _hashed_password):
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(f"INSERT INTO {DB_TABLE} (login, name, password) VALUES ('{name}','{login}','{_hashed_password}')")
     conn.commit()
+
+
+def get_users():
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute(f"SELECT * FROM {DB_TABLE}")
+    users = cursor.fetchall()
+    return [{"id": i[0], "login": i[1], "name": i[2], "password": i[3]} for i in users]
+
+
 
 @app.route('/')
 def index():
@@ -52,30 +65,32 @@ def index():
 
 @app.route("/login", methods=['POST', 'GET'])
 def login():
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    if request.method == 'POST' and 'login' in request.json and 'password' in request.json:
+        login = request.json['login']
+        password = request.json['password']
+        users = get_users()
 
-    if request.method == 'POST' and 'login' in request.form and 'password' in request.form:
-        login = request.form['login']
-        password = request.form['password']
+        for i in users:
+           if i['login'] == login and check_password_hash(i["password"], password) == True:
+               token = create_access_token(identity=i['id'])
+               return {'token': token}
+        else:
+            return {"response": False}
 
-        cursor.execute(f"SELECT * FROM {DB_TABLE} WHERE login = '%s'" % login)
-        account = cursor.fetchone()
-        print(account)
-    return render_template("login.html")
+    return 'hh'
 
 
 @app.route("/index", methods=['POST', 'GET'])
 def register():
-
-
     # Собирание данные с форм и хеширование паса
-
     if request.method == "POST" and 'login' in request.json and 'name' in request.json and 'password' in request.json:
+        get_users()
         name = request.json['name']
         login = request.json['login']
         password = request.json['password']
 
         _hashed_password = generate_password_hash(password)
+
 
         # Проверка на валидность имени и логина
 
@@ -99,6 +114,11 @@ def register():
 
     return render_template("index.html")
 
+@app.route("/protect", methods=['GET'])
+@jwt_required()
+def protect():
+    current_user = get_jwt_identity()
+    return jsonify(current_user)
 
 @app.route('/logout')
 def logout():
