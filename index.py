@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from flask import session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt
 from datetime import timedelta
 
 app = Flask(__name__)
@@ -13,7 +13,10 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 jwt = JWTManager(app)
+
 
 DB_HOST = "containers-us-west-53.railway.app"
 DB_NAME = "railway"
@@ -23,7 +26,7 @@ DB_PORT = "7193"
 DB_TABLE = "users2"
 
 conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT)
-
+cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -39,24 +42,39 @@ class User(db.Model):
 
 
 def cursor_select(column, arg):
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(f"SELECT * FROM {DB_TABLE} WHERE {column} = '{arg}'")
     account = cursor.fetchone()
     return account
 
 
 def add_user(name, login, _hashed_password):
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(f"INSERT INTO {DB_TABLE} (login, name, password) VALUES ('{name}','{login}','{_hashed_password}')")
     conn.commit()
 
+def add_token_blacklist(jti):
+    cursor.execute(f"INSERT INTO invalide_tokens (jti) VALUES ('{jti}')")
+    conn.commit()
 
 def get_users():
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(f"SELECT * FROM {DB_TABLE}")
     users = cursor.fetchall()
     return [{"id": i[0], "login": i[1], "name": i[2], "password": i[3]} for i in users]
 
+def get_blocklist_db():
+    cursor.execute(f"SELECT * FROM invalide_tokens")
+    tokens = cursor.fetchall()
+    return [{"id": i[0], "jti": i[1]} for i in tokens]
+
+
+
+@jwt.token_in_blocklist_loader
+def check_token_blocklist(jwt_headers, jwt_data):
+    jti = jwt_data["jti"]
+    tokens = get_blocklist_db()
+    for i in tokens:
+        if jti in i["jti"]:
+            return True
+    return False
 
 
 @app.route('/')
@@ -124,10 +142,6 @@ def protect():
     current_user = get_jwt_identity()
     return jsonify(current_user)
 
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    return redirect(url_for('index'))
 
 @app.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
@@ -135,6 +149,14 @@ def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     return jsonify({"access_token": access_token})
+
+@app.route("/logout", methods=["DELETE"])
+@jwt_required(verify_type=False)
+def logout():
+    token = get_jwt()["jti"]
+    add_token_blacklist(token)
+    return {"response": "success"}
+
 
 
 if __name__ == "__main__":
