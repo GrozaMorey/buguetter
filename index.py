@@ -1,15 +1,18 @@
-from flask import Flask, render_template, url_for, request, redirect, flash
+from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 import psycopg2
 import psycopg2.extras
 from flask import session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token
+from datetime import timedelta
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 jwt = JWTManager(app)
 
 DB_HOST = "containers-us-west-53.railway.app"
@@ -73,7 +76,8 @@ def login():
         for i in users:
            if i['login'] == login and check_password_hash(i["password"], password) == True:
                token = create_access_token(identity=i['id'])
-               return {'token': token}
+               refresh_token = create_refresh_token(identity=i['id'])
+               return {'token': token, "refresh_token": refresh_token}
         else:
             return {"response": False}
 
@@ -114,7 +118,7 @@ def register():
 
     return render_template("index.html")
 
-@app.route("/protect", methods=['GET'])
+@app.route("/protect", methods=['POST'])
 @jwt_required()
 def protect():
     current_user = get_jwt_identity()
@@ -124,6 +128,13 @@ def protect():
 def logout():
     session.pop('username', None)
     return redirect(url_for('index'))
+
+@app.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity)
+    return jsonify({"access_token": access_token})
 
 
 if __name__ == "__main__":
