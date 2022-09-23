@@ -2,33 +2,9 @@
 <html>
  <head>
   <meta charset="utf-8">
-  <title>Поле с паролем</title>
+  <title>api</title>
  </head>
  <body>
-   <form  method="post">
-    <p><strong>Логин:</strong>
-      <input maxlength="25" size="40" name="login"></p>
- 	   <p><strong>Имя:</strong>
-      <input maxlength="25" size="40" name="name"></p>
-    <p><strong>Пароль:</strong>
-     <input type="password" maxlength="25" size="40" name="password"></p>
-    <input type="submit" value="Зарегать">
-</form>
-  <div class="form-group ">
-        {% with messages = get_flashed_messages()  %}
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-       <p style="padding:5px;">
-
-      </div>
+<a>Use /api to get info</a>
  </body>
 </html>
