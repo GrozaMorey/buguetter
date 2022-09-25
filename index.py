@@ -1,12 +1,11 @@
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
-import psycopg2
 import psycopg2.extras
-from flask import session, jsonify
+from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token, \
     get_jwt
-from datetime import timedelta, datetime
+from datetime import timedelta
 import time
 import calendar
 
@@ -75,9 +74,7 @@ def get_blocklist_db():
     current_gmt = time.gmtime()
     time_stump = calendar.timegm(current_gmt)
     for x in result:
-        print(result)
         if int(x["date"]) <= time_stump:
-            print(time_stump)
             cursor.execute(f'DELETE FROM invalide_tokens WHERE id = {x["id"]}')
     return result
 
@@ -118,7 +115,6 @@ def login():
 @app.route("/api/register", methods=['POST', 'GET'])
 def register():
     # Собирание данные с форм и хеширование паса
-    get_blocklist_db()
     if request.method == "POST" and 'login' in request.json and 'name' in request.json and 'password' in request.json:
         get_users()
         name = request.json['name']
