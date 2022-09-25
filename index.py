@@ -6,13 +6,16 @@ from flask import session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token, \
     get_jwt
-from datetime import timedelta
+from datetime import timedelta, datetime
+import time
+import calendar
+
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
@@ -53,8 +56,9 @@ def add_user(name, login, _hashed_password):
     conn.commit()
 
 
-def add_token_blacklist(jti):
-    cursor.execute(f"INSERT INTO invalide_tokens (jti) VALUES ('{jti}')")
+def add_token_blacklist(jti, token_exp):
+    cursor.execute(f"INSERT INTO invalide_tokens (jti, date) VALUES ('{jti}', '{token_exp}')")
+    print(token_exp)
     conn.commit()
 
 
@@ -67,7 +71,15 @@ def get_users():
 def get_blocklist_db():
     cursor.execute(f"SELECT * FROM invalide_tokens")
     tokens = cursor.fetchall()
-    return [{"id": i[0], "jti": i[1]} for i in tokens]
+    result = [{"id": i[0], "jti": i[1], "date": i[2]} for i in tokens]
+    current_gmt = time.gmtime()
+    time_stump = calendar.timegm(current_gmt)
+    for x in result:
+        print(result)
+        if int(x["date"]) <= time_stump:
+            print(time_stump)
+            cursor.execute(f'DELETE FROM invalide_tokens WHERE id = {x["id"]}')
+    return result
 
 
 @jwt.token_in_blocklist_loader
@@ -103,9 +115,10 @@ def login():
     return 'hh'
 
 
-@app.route("/api/index", methods=['POST', 'GET'])
+@app.route("/api/register", methods=['POST', 'GET'])
 def register():
     # Собирание данные с форм и хеширование паса
+    get_blocklist_db()
     if request.method == "POST" and 'login' in request.json and 'name' in request.json and 'password' in request.json:
         get_users()
         name = request.json['name']
@@ -156,7 +169,8 @@ def refresh():
 @jwt_required(verify_type=False)
 def logout():
     token = get_jwt()["jti"]
-    add_token_blacklist(token)
+    token_exp = get_jwt()["exp"]
+    add_token_blacklist(token, token_exp)
     return {"response": "success"}
 
 @app.route("/api/status", methods=["GET"])
