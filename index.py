@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token, \
     get_jwt
 from datetime import timedelta
-import defs
+from defs import get_blocklist_db, get_users, add_user, add_token_blacklist, cursor_select
 from db_script import db_script
 
 
@@ -52,17 +52,20 @@ def login():
     if request.method == 'POST' and 'login' in request.json and 'password' in request.json:
         login = request.json['login']
         password = request.json['password']
-        users = get_users()
 
-        for i in users:
-            if i['login'] == login and check_password_hash(i["password"], password) is True:
-                token = create_access_token(identity=i['id'])
-                refresh_token = create_refresh_token(identity=i['id'])
+        account = cursor_select("login", login)
+        if account is not None:
+            if check_password_hash(account[-1], password) is True:
+                token = create_access_token(identity=account[0])
+                refresh_token = create_refresh_token(identity=account[0])
                 return {'token': token, "refresh_token": refresh_token}
+            else:
+                return {"response": "wrong password"}
         else:
-            return {"response": False}
+            return {"response": "none user"}
 
-    return 'hh'
+
+
 
 
 @app.route("/api/register", methods=['POST', 'GET'])
