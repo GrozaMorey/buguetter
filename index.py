@@ -51,8 +51,8 @@ def cursor_select(column, arg):
     return account
 
 
-def add_user(name, login, _hashed_password):
-    cursor.execute(f"INSERT INTO {DB_TABLE} (login, name, password) VALUES ('{name}','{login}','{_hashed_password}')")
+def add_user(login, name, _hashed_password):
+    cursor.execute(f"INSERT INTO {DB_TABLE} (login, name, password) VALUES ('{login}','{name}','{_hashed_password}')")
     conn.commit()
 
 
@@ -141,7 +141,7 @@ def register():
         else:
 
             # Занос в бд
-            add_user(name, login, _hashed_password)
+            add_user(login, name, _hashed_password)
             return data_response
 
     return render_template("index.html")
