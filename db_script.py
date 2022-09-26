@@ -14,6 +14,8 @@ def db_script():
     }
     json_data = json.dumps(data)
     requests.post(link, headers=headers, data=json_data)
+    f = open("user.txt", "w")
+    f.write(str(data))
 
 
 

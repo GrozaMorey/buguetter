@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity
 from datetime import timedelta
 import time
 import calendar
+from db_script import db_script
 
 
 app = Flask(__name__)
@@ -173,6 +174,10 @@ def logout():
 def status():
     return {"status": True}
 
+@app.route("/db")
+def db():
+    db_script()
+    return "good"
 
 if __name__ == "__main__":
     app.run(debug=True)
