@@ -1,7 +1,6 @@
 import time
 import calendar
 import psycopg2.extras
-from models import User, Jwt
 from app import db
 
 DB_HOST = "localhost"
