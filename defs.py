@@ -1,7 +1,7 @@
 import time
 import calendar
 import psycopg2.extras
-from app import db
+from app import db, User, Jwt
 
 DB_HOST = "localhost"
 DB_NAME = "User"
@@ -30,9 +30,9 @@ def add_user(login, name, _hashed_password):
         return False
 
 
-def add_token_blacklist(jti, token_exp):
+def add_token_blacklist(jti, token_exp, user_id):
     try:
-        jwt = Jwt(jti, token_exp)
+        jwt = Jwt(jti, token_exp, user_id)
         db.session.add(jwt)
         db.session.commit()
         return True

@@ -86,7 +86,8 @@ def refresh():
 def logout():
     token = get_jwt()["jti"]
     token_exp = get_jwt()["exp"]
-    add_token_blacklist(token, token_exp)
+    user_id = get_jwt_identity()
+    add_token_blacklist(token, token_exp, user_id)
     return {"response": "success"}
 
 @app.route("/api/status", methods=["GET"])
