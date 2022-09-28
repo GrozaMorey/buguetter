@@ -54,14 +54,16 @@ def register():
         _hashed_password = generate_password_hash(password)
 
         # Проверка на валидность имени и логина
-
-        data_response = {
-            "response": True
-        }
+        account = cursor_select("login", login)
+        if account:
+            return {"response": "Аккаунт с таким логином уже есть"}
+        account = cursor_select("name", name)
+        if account:
+            return {"response": "Аккаунт с таким именем уже есть"}
 
             # Занос в бд
         add_user(login, name, _hashed_password)
-        return data_response
+        return {"response": True}
 
 
 
