@@ -24,6 +24,7 @@ class User(db.Model):
     login = db.Column(db.String(40), nullable=False)
     name = db.Column(db.String(40), nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    jwt = db.relationship('Jwt', backref='user')
 
     def __init__(self, login, name, password):
         self.login = login
@@ -36,8 +37,9 @@ class Jwt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jwt = db.Column(db.String, nullable=False)
     date = db.Column(db.String, nullable=False)
-    user_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    def __init__(self, jwt, date):
+    def __init__(self, jwt, date, user_id):
         self.jwt = jwt
         self.date = date
+        self.user_id = user_id
