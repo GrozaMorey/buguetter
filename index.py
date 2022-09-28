@@ -1,45 +1,20 @@
-from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
-import psycopg2.extras
+from flask import  render_template, request
 from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, create_refresh_token, \
-    get_jwt
-from datetime import timedelta
-from defs import get_blocklist_db, get_users, add_user, add_token_blacklist, cursor_select
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt
+from defs import *
 from db_script import db_script
+from app import jwt, app
 
 
-app = Flask(__name__)
-db = SQLAlchemy(app)
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
-app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
-app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
-app.config['JWT_BLACKLIST_ENABLED'] = True
-app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
-jwt = JWTManager(app)
-
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    login = db.Column(db.String(40), nullable=False)
-    name = db.Column(db.String(40), nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-
-    def __init__(self, login, name, password):
-        self.login = login
-        self.name = name
-        self.password = password
-
-@jwt.token_in_blocklist_loader
-def check_token_blocklist(jwt_headers, jwt_data):
-    jti = jwt_data["jti"]
-    tokens = get_blocklist_db()
-    for i in tokens:
-        if jti in i["jti"]:
-            return True
-    return False
+# @jwt.token_in_blocklist_loader
+# def check_token_blocklist(jwt_headers, jwt_data):
+#     jti = jwt_data["jti"]
+#     tokens = get_blocklist_db()
+#     for i in tokens:
+#         if jti in i["jti"]:
+#             return True
+#     return False
 
 
 @app.route('/')
@@ -72,7 +47,6 @@ def login():
 def register():
     # Собирание данные с форм и хеширование паса
     if request.method == "POST" and 'login' in request.json and 'name' in request.json and 'password' in request.json:
-        get_users()
         name = request.json['name']
         login = request.json['login']
         password = request.json['password']
@@ -84,22 +58,12 @@ def register():
         data_response = {
             "response": True
         }
-        account = cursor_select("login", login)
-        if account:
-            data_response['response'] = "Куда лезешь он уже есть"
-            return data_response
-
-        account = cursor_select("name", name)
-        if account:
-            data_response['response'] = "Такое имя уже есть "
-            return data_response
-        else:
 
             # Занос в бд
-            add_user(login, name, _hashed_password)
-            return data_response
+        add_user(login, name, _hashed_password)
+        return data_response
 
-    return render_template("index.html")
+
 
 
 @app.route("/api/protect", methods=['POST'])
