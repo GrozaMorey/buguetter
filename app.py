@@ -18,7 +18,10 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 jwt = JWTManager(app)
 
 
-
+post_tags = db.Table('post_tags',
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+                     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
+                     )
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -57,9 +60,18 @@ class Post(db.Model):
     cool = db.Column(db.Integer)
     shit = db.Column(db.Integer)
     angry = db.Column(db.Integer)
+    tags = db.relationship('Tags', secondary=post_tags, backref="taged")
 
     def __init__(self, text, date, user_id):
         self.text = text
         self.date = date
         self.user_id = user_id
 
+
+class Tags(db.Model):
+    __tablename__ = "tags"
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(100), nullable=False)
+
+    def __init__(self, text):
+        self.text = text

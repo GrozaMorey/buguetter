@@ -1,7 +1,7 @@
 import time
 import calendar
 import psycopg2.extras
-from app import db, User, Jwt, Post
+from app import db, User, Jwt, Post, Tags
 from datetime import datetime
 
 
@@ -52,7 +52,7 @@ def get_users():
 def get_blocklist_db():
     cursor.execute(f"SELECT * FROM invalid_tokens")
     tokens = cursor.fetchall()
-    result = [{"id": i[0], "jti": i[1], "date": i[2]} for i in tokens]
+    result = [{"id": i[0], "jti": i[1], "date": i[2], "user_id": i[3]} for i in tokens]
     current_gmt = time.gmtime()
     time_stump = calendar.timegm(current_gmt)
     for x in result:
@@ -61,11 +61,31 @@ def get_blocklist_db():
     return result
 
 
-def add_post(text, user_id):
+def add_post(text, user_id, tags_id):
     try:
         date = datetime.now()
         post = Post(text, date, user_id)
         db.session.add(post)
+        db.session.commit()
+        if tags_id != 0:
+            cursor.execute(f"SELECT MAX(id) FROM post WHERE user_id = {user_id}")
+            id = cursor.fetchone()
+            for i in tags_id:
+                post = Post.query.filter_by(id=id[0]).first()
+                tag = Tags.query.filter_by(id=i).first()
+                post.tags.append(tag)
+                db.session.commit()
+
+
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+def add_tag(text):
+    try:
+        tag = Tags(text)
+        db.session.add(tag)
         db.session.commit()
         return True
     except Exception as e:
