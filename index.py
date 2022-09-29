@@ -7,14 +7,14 @@ from db_script import db_script
 from app import jwt, app
 
 
-# @jwt.token_in_blocklist_loader
-# def check_token_blocklist(jwt_headers, jwt_data):
-#     jti = jwt_data["jti"]
-#     tokens = get_blocklist_db()
-#     for i in tokens:
-#         if jti in i["jti"]:
-#             return True
-#     return False
+@jwt.token_in_blocklist_loader
+def check_token_blocklist(jwt_headers, jwt_data):
+    jti = jwt_data["jti"]
+    tokens = get_blocklist_db()
+    for i in tokens:
+        if jti in i["jti"]:
+            return True
+    return False
 
 
 @app.route('/')
@@ -54,14 +54,16 @@ def register():
         _hashed_password = generate_password_hash(password)
 
         # Проверка на валидность имени и логина
-
-        data_response = {
-            "response": True
-        }
+        account = cursor_select("login", login)
+        if account:
+            return {"response": "Аккаунт с таким логином уже есть"}
+        account = cursor_select("name", name)
+        if account:
+            return {"response": "Аккаунт с таким именем уже есть"}
 
             # Занос в бд
         add_user(login, name, _hashed_password)
-        return data_response
+        return {"response": True}
 
 
 
