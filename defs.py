@@ -1,7 +1,9 @@
 import time
 import calendar
 import psycopg2.extras
-from app import db, User, Jwt
+from app import db, User, Jwt, Post
+from datetime import datetime
+
 
 DB_HOST = "localhost"
 DB_NAME = "User"
@@ -57,3 +59,15 @@ def get_blocklist_db():
         if int(x["date"]) <= time_stump:
             cursor.execute(f'DELETE FROM invalid_tokens WHERE id = {x["id"]}')
     return result
+
+
+def add_post(text, user_id):
+    try:
+        date = datetime.now()
+        post = Post(text, date, user_id)
+        db.session.add(post)
+        db.session.commit()
+        return True
+    except Exception as e:
+        print(e)
+        return False

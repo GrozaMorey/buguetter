@@ -101,5 +101,15 @@ def db():
     db_script()
     return "good"
 
+@app.route("/api/publish_post", methods=["POST"])
+@jwt_required()
+def publish_post():
+    if request.method == "POST" and 'text' in request.json:
+        user_id = get_jwt_identity()
+        text = request.json["text"]
+        add_post(text, user_id)
+        return {"response": True}
+    return {"response": False}
+
 if __name__ == "__main__":
     app.run(debug=True)
