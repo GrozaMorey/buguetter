@@ -18,13 +18,20 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 jwt = JWTManager(app)
 
 
+post_tags = db.Table('post_tags',
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+                     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
+                     )
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     login = db.Column(db.String(40), nullable=False)
     name = db.Column(db.String(40), nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    jwt = db.relationship('Jwt', backref='user')
+    post = db.relationship('Post', backref='post')
+    jwt = db.relationship('Jwt', backref='black_jwt')
+
 
     def __init__(self, login, name, password):
         self.login = login
@@ -43,3 +50,28 @@ class Jwt(db.Model):
         self.jwt = jwt
         self.date = date
         self.user_id = user_id
+
+class Post(db.Model):
+    __tablename__ = "post"
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(1000), nullable=False)
+    date = db.Column(db.Date)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    cool = db.Column(db.Integer)
+    shit = db.Column(db.Integer)
+    angry = db.Column(db.Integer)
+    tags = db.relationship('Tags', secondary=post_tags, backref="taged")
+
+    def __init__(self, text, date, user_id):
+        self.text = text
+        self.date = date
+        self.user_id = user_id
+
+
+class Tags(db.Model):
+    __tablename__ = "tags"
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(100), nullable=False)
+
+    def __init__(self, text):
+        self.text = text
