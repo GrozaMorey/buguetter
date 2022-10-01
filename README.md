@@ -3,8 +3,7 @@
 
 Пулишь последнюю версию
 
-Заходишь в app.py и меняешь app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123@localhost/User" на "postgresql://postgres:пароль@localhost/имя 
-бд(по дефолту postgres)"
+Заходишь в `app.py` и меняешь `app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123@localhost/User"` на `"postgresql://postgres:пароль@localhost/имя_бд` (по дефолту `postgres`)"
 
 Запускаешь Pgadmin 4 
 
