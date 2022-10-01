@@ -9,9 +9,9 @@
 Запускаешь Pgadmin 4 
 
 Заходишь в терминал и вводишь команды 
-
-flask db stump head 
-
+```bash
+flask db init
+flask db migrate
 flask db upgrade
-
+```
 Запускаешь index.py и далее следуешь схеме
