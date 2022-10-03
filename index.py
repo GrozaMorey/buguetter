@@ -139,5 +139,12 @@ def feed():
     offset = None
     return get_feed(offset)
 
+@app.route("/api/get_user_data", methods=["POST"])
+@jwt_required()
+def get_user_data():
+    user_id = get_jwt_identity()
+    return {"name": f"{get_user_date(user_id)}"}
+
+
 if __name__ == "__main__":
     app.run(debug=True)

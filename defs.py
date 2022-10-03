@@ -148,3 +148,8 @@ def get_feed(offset):
                  "user_id": i[3]})
             num += 1
         return data
+
+def get_user_date(user_id):
+    cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
+    result = cursor.fetchone()
+    return result[2]
