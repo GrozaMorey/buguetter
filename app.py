@@ -5,19 +5,25 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
 
+db_config = {}
+with open("db_config.txt") as file:
+    line = file.read().splitlines()
+for i in line:
+    key, *value = i.split(":")
+    db_config.update({key: value[0]})
+
 
 app = Flask(__name__)
 CORS(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123@localhost/User"
+app.config["SQLALCHEMY_DATABASE_URI"] = f'postgresql://{db_config["DB_USER"]}:{db_config["DB_PASS"]}@{db_config["DB_HOST"]}/{db_config["DB_NAME"]}'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=5)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 jwt = JWTManager(app)
-
 
 post_tags = db.Table('post_tags',
                      db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
