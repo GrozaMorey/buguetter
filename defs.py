@@ -1,16 +1,16 @@
 import time
 import calendar
 import psycopg2.extras
-from app import db, User, Jwt, Post, Tags
+from app import db, User, Jwt, Post, Tags, db_config
 from datetime import datetime
 
 
-DB_HOST = "localhost"
-DB_NAME = "User"
-DB_USER = "postgres"
-DB_PASS = "123"
-DB_PORT = "5432"
-DB_TABLE = "users"
+DB_HOST = db_config["DB_HOST"]
+DB_NAME = db_config["DB_NAME"]
+DB_USER = db_config["DB_USER"]
+DB_PASS = db_config["DB_PASS"]
+DB_PORT = db_config["DB_PORT"]
+DB_TABLE = db_config["DB_TABLE"]
 
 conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT)
 cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
