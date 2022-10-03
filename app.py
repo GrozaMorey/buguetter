@@ -62,17 +62,28 @@ class Post(db.Model):
     __tablename__ = "post"
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(1000), nullable=False)
-    date = db.Column(db.Date)
+    date = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     cool = db.Column(db.Integer)
     shit = db.Column(db.Integer)
     angry = db.Column(db.Integer)
+    popularity = db.Column(db.Integer)
+    karma = db.Column(db.Integer)
+    total = db.Column(db.Integer)
     tags = db.relationship('Tags', secondary=post_tags, backref="taged")
 
     def __init__(self, text, date, user_id):
         self.text = text
         self.date = date
         self.user_id = user_id
+        self.cool = 0
+        self.shit = 0
+        self.angry = 0
+        self.popularity = 0
+        self.karma = 0
+        self.total = 0
+
+
 
 
 class Tags(db.Model):

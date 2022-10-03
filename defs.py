@@ -15,6 +15,7 @@ DB_TABLE = db_config["DB_TABLE"]
 conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT)
 cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+
 def cursor_select(column, arg):
     cursor.execute(f"SELECT * FROM {DB_TABLE} WHERE {column} = '{arg}'")
     account = cursor.fetchone()
@@ -63,7 +64,8 @@ def get_blocklist_db():
 
 def add_post(text, user_id, tags_id):
     try:
-        date = datetime.now()
+        current_gmt = time.gmtime()
+        date = calendar.timegm(current_gmt)
         post = Post(text, date, user_id)
         db.session.add(post)
         db.session.commit()
@@ -103,3 +105,46 @@ def check_db():
     except Exception as e:
         print(e)
         return False
+
+def add_reaction(post_id, reaction):
+    try:
+        cursor.execute(f"UPDATE post SET {reaction} = {reaction} + 1 WHERE id = {post_id}")
+        conn.commit()
+        cursor.execute(f"UPDATE post SET popularity = cool + shit + angry WHERE id = {post_id}")
+        cursor.execute(f"UPDATE post SET karma = cool - shit - angry WHERE id = {post_id}")
+        cursor.execute(f"UPDATE post SET total = popularity + karma WHERE id = {post_id}")
+        conn.commit()
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+def get_feed(offset):
+    current_gmt = time.gmtime()
+    date = calendar.timegm(current_gmt)
+    if offset == None:
+        cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC LIMIT 10")
+        result = cursor.fetchall()
+        data = {}
+        num = 1
+        for i in result:
+            data[f"{num}"] =(
+                {"id": i[0],
+                "text": i[1],
+                "date": i[2],
+                "user_id": i[3]})
+            num += 1
+        return data
+    else:
+        cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC LIMIT 10 OFFSET {offset}")
+        result = cursor.fetchall()
+        data = {}
+        num = 1
+        for i in result:
+            data[f"{num}"] = (
+                {"id": i[0],
+                 "text": i[1],
+                 "date": i[2],
+                 "user_id": i[3]})
+            num += 1
+        return data

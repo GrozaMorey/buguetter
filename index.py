@@ -5,6 +5,8 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_requir
 from defs import *
 from db_script import db_script
 from app import jwt, app
+from hype import hype, reactio
+
 
 
 @jwt.token_in_blocklist_loader
@@ -119,7 +121,23 @@ def add_tags():
         text = request.json["text"]
         add_tag(text,)
         return {"response": True}
+    return {"response": True}
+
+@app.route("/api/add_reaction", methods=["POST"])
+# @jwt_required()
+def add_reactions():
+    if request.method == "POST" and 'post_id' in request.json and 'reactions' in request.json:
+        post_id = request.json["post_id"]
+        reactions = request.json["reactions"]
+
+        add_reaction(post_id, reactions)
+        return {"response": True}
     return {"response": False}
+
+@app.route("/api/feed")
+def feed():
+    offset = None
+    return get_feed(offset)
 
 if __name__ == "__main__":
     app.run(debug=True)
