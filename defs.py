@@ -91,3 +91,15 @@ def add_tag(text):
     except Exception as e:
         print(e)
         return False
+
+def check_db():
+    try:
+        cursor.execute("SELECT version()")
+        result = cursor.fetchone()
+        if result:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False

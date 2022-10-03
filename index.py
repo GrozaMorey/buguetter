@@ -94,7 +94,7 @@ def logout():
 
 @app.route("/api/status", methods=["GET"])
 def status():
-    return {"status": True}
+    return {"status": check_db()}
 
 @app.route("/db")
 def db():
