@@ -4,13 +4,21 @@ from datetime import timedelta
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
 
-db_config = {}
-with open("db_config.txt") as file:
-    line = file.read().splitlines()
-for i in line:
-    key, *value = i.split(":")
-    db_config.update({key: value[0]})
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+db_config = {
+    "DB_HOST": os.environ.get('DB_HOST'),
+    "DB_NAME": os.environ.get('DB_NAME'),
+    "DB_USER": os.environ.get('DB_USER'),
+    "DB_PASS": os.environ.get('DB_PASS'),
+    "DB_PORT": os.environ.get('DB_PORT'),
+    "DB_TABLE": os.environ.get('DB_TABLE'),
+}
+
 
 
 app = Flask(__name__)
