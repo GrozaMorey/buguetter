@@ -41,7 +41,8 @@ post_tags = db.Table('post_tags',
 
 user_post = db.Table("user_post",
                      db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
-                     db.Column('post_id', db.Integer, db.ForeignKey('post.id'))
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+                     db.Column('date', db.Integer)
                      )
 
 class User(db.Model):
