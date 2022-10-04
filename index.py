@@ -134,10 +134,13 @@ def add_reactions():
         return {"response": True}
     return {"response": False}
 
-@app.route("/api/feed")
+@app.route("/api/feed", methods=["POST"])
+@jwt_required()
 def feed():
-    offset = None
-    return get_feed(offset)
+    user_id = get_jwt_identity()
+    post_id = request.json["post_id"]
+    return get_feed(post_id, user_id)
+
 
 @app.route("/api/get_user_data", methods=["POST"])
 @jwt_required()

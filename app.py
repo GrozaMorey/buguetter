@@ -27,7 +27,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.config["SQLALCHEMY_DATABASE_URI"] = f'postgresql://{db_config["DB_USER"]}:{db_config["DB_PASS"]}@{db_config["DB_HOST"]}/{db_config["DB_NAME"]}'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=5)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
@@ -38,6 +38,12 @@ post_tags = db.Table('post_tags',
                      db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
                      )
 
+
+user_post = db.Table("user_post",
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id'))
+                     )
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -46,7 +52,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     post = db.relationship('Post', backref='post')
     jwt = db.relationship('Jwt', backref='black_jwt')
-
+    post_seen = db.relationship('Post', secondary=user_post, backref="user")
 
     def __init__(self, login, name, password):
         self.login = login
@@ -92,8 +98,6 @@ class Post(db.Model):
         self.total = 0
 
 
-
-
 class Tags(db.Model):
     __tablename__ = "tags"
     id = db.Column(db.Integer, primary_key=True)
@@ -101,3 +105,5 @@ class Tags(db.Model):
 
     def __init__(self, text):
         self.text = text
+
+

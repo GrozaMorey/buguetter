@@ -84,6 +84,7 @@ def add_post(text, user_id, tags_id):
         print(e)
         return False
 
+
 def add_tag(text):
     try:
         tag = Tags(text)
@@ -93,6 +94,7 @@ def add_tag(text):
     except Exception as e:
         print(e)
         return False
+
 
 def check_db():
     try:
@@ -105,6 +107,7 @@ def check_db():
     except Exception as e:
         print(e)
         return False
+
 
 def add_reaction(post_id, reaction):
     try:
@@ -119,37 +122,47 @@ def add_reaction(post_id, reaction):
         print(e)
         return False
 
-def get_feed(offset):
+
+def get_seen_post(user_id):
+    cursor.execute(f"SELECT post_id FROM user_post WHERE user_id = {user_id}")
+    result = cursor.fetchall()
+    post_id = []
+    for i in result:
+        post_id.append(i[0])
+    return post_id
+
+
+def get_feed(post_id, user_id):
+    if post_id is not False:
+        user = User.query.filter_by(id=user_id).first()
+        for i in post_id:
+            post = Post.query.filter_by(id=i).first()
+            user.post_seen.append(post)
+            db.session.commit()
     current_gmt = time.gmtime()
     date = calendar.timegm(current_gmt)
-    if offset == None:
-        cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC LIMIT 10")
-        result = cursor.fetchall()
-        data = {}
-        num = 1
-        for i in result:
-            data[f"{num}"] =(
-                {"id": i[0],
-                "text": i[1],
-                "date": i[2],
-                "user_id": i[3]})
-            num += 1
-        return data
-    else:
-        cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC LIMIT 10 OFFSET {offset}")
-        result = cursor.fetchall()
-        data = {}
-        num = 1
-        for i in result:
-            data[f"{num}"] = (
-                {"id": i[0],
-                 "text": i[1],
-                 "date": i[2],
-                 "user_id": i[3]})
-            num += 1
-        return data
+    cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC")
+    result = cursor.fetchall()
+    data = {}
+    num = 1
+    post_seen = get_seen_post(user_id)
+    for i in result:
+        if i[0] in post_seen:
+            continue
+        data[f"{num}"] =(
+            {"id": i[0],
+             "text": i[1],
+             "date": i[2],
+             "user_id": i[3]})
+        num += 1
+        if len(data.keys()) == 10:
+            break
+    return data
+
+
 
 def get_user_date(user_id):
     cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
     result = cursor.fetchone()
     return result[2]
+
