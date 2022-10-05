@@ -35,7 +35,7 @@ def login():
             if check_password_hash(account[-1], password) is True:
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
-                response = Response(f"'token': {token}", mimetype='application/json')
+                response = Response(f'"token": "{token}"', mimetype='application/json')
                 response.set_cookie(max_age=2592000, httponly=True, path="/api/refresh", secure=True, key='refresh', value=refresh_token)
                 return response
             else:
