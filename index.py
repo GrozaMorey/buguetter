@@ -1,5 +1,5 @@
 from flask import render_template, request, Response
-from flask import jsonify
+from flask import jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, set_refresh_cookies
 from defs import *
@@ -35,6 +35,7 @@ def login():
             if check_password_hash(account[-1], password) is True:
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
+
                 response = Response(f'"token": "{token}"', mimetype='application/json')
                 set_refresh_cookies(response, refresh_token, max_age=2592000)
                 return response
