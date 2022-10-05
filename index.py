@@ -1,7 +1,7 @@
 from flask import render_template, request, Response
 from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, set_refresh_cookies
 from defs import *
 from db_script import db_script
 from app import jwt, app
@@ -36,7 +36,7 @@ def login():
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
                 response = Response(f'"token": "{token}"', mimetype='application/json')
-                response.set_cookie(max_age=2592000, httponly=True, path="/api/refresh", secure=True, key='refresh', value=refresh_token)
+                set_refresh_cookies(response, refresh_token, max_age=2592000)
                 return response
             else:
                 return {"response": "wrong password"}
