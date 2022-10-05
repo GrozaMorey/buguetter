@@ -124,11 +124,15 @@ def add_reaction(post_id, reaction):
 
 
 def get_seen_post(user_id):
-    cursor.execute(f"SELECT post_id FROM user_post WHERE user_id = {user_id}")
+    cursor.execute(f"SELECT * FROM user_post WHERE user_id = {user_id}")
     result = cursor.fetchall()
     post_id = []
+    current_gmt = time.gmtime()
+    date = calendar.timegm(current_gmt)
     for i in result:
         post_id.append(i[0])
+        if i[2] <= date:
+            cursor.execute(f"DELETE FROM user_post WHERE user_id = {i[0]} and post_id = {i[1]}")
     return post_id
 
 
@@ -143,6 +147,7 @@ def get_feed(post_id, user_id):
             result = cursor.fetchone()
             cursor.execute(f"UPDATE user_post SET date = {result[0]} + 604800 WHERE post_id = {i}")
             conn.commit()
+
     current_gmt = time.gmtime()
     date = calendar.timegm(current_gmt)
     cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC")
@@ -162,7 +167,6 @@ def get_feed(post_id, user_id):
         if len(data.keys()) == 10:
             break
     return data
-
 
 
 def get_user_date(user_id):
