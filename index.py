@@ -40,7 +40,7 @@ def login():
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
 
-                response = Response(f'"token": "{token}"', mimetype='application/json')
+                response = make_response(jsonify({"token": token}))
                 set_refresh_cookies(response, refresh_token, max_age=2592000)
                 return response
             else:
