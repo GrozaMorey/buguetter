@@ -1,11 +1,16 @@
 from flask import render_template, request, Response
-from flask import jsonify, make_response
+from flask import jsonify, make_response, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, set_refresh_cookies
 from defs import *
 from db_script import db_script
 from app import jwt, app
 from hype import hype, reactio
+
+
+@jwt.expired_token_loader
+def expired_token_callback(x, z):
+    return redirect(app.config['BASE_URL'] + '/api/refresh')
 
 
 @jwt.token_in_blocklist_loader
@@ -74,7 +79,7 @@ def protect():
     return jsonify(current_user)
 
 
-@app.route('/api/refresh', methods=['POST'])
+@app.route('/api/refresh', methods=['GET'])
 @jwt_required(refresh=True)
 def refresh():
     identity = get_jwt_identity()
