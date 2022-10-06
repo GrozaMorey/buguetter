@@ -129,12 +129,10 @@ def add_reaction(post_id, reaction, user_id):
             karma = cursor.fetchall()
             user = User.query.filter_by(id=user_id).first()
             for i in tags:
-                print(i)
                 if i in karma:
                     cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} and tag_id = {i[0]}")
                     conn.commit()
                 else:
-                    print(karma)
                     tag = Tags.query.filter_by(id=i[0]).first()
                     user.user_tags.append(tag)
                     db.session.commit()
