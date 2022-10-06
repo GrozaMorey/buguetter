@@ -1,8 +1,10 @@
+import json
 import time
 import calendar
 import psycopg2.extras
 from app import db, User, Jwt, Post, Tags, db_config
 from datetime import datetime
+from flask import Response
 
 
 DB_HOST = db_config["DB_HOST"]
@@ -65,8 +67,7 @@ def get_blocklist_db():
 
 def add_post(text, user_id, tags_id):
     try:
-        current_gmt = time.gmtime()
-        date = calendar.timegm(current_gmt)
+        date = time_now()
         post = Post(text, date, user_id)
         db.session.add(post)
         db.session.commit()
@@ -148,16 +149,17 @@ def get_seen_post(user_id):
     cursor.execute(f"SELECT * FROM user_post WHERE user_id = {user_id}")
     result = cursor.fetchall()
     post_id = []
-    current_gmt = time.gmtime()
-    date = calendar.timegm(current_gmt)
+    date = time_now()
     for i in result:
-        post_id.append(i[0])
+        post_id.append(i[1])
         if i[2] <= date:
             cursor.execute(f"DELETE FROM user_post WHERE user_id = {i[0]} and post_id = {i[1]}")
     return post_id
 
 
 def get_feed(post_id, user_id):
+    # добавление поста в игнор лист
+
     if post_id is not False:
         user = User.query.filter_by(id=user_id).first()
         for i in post_id:
@@ -169,24 +171,46 @@ def get_feed(post_id, user_id):
             cursor.execute(f"UPDATE user_post SET date = {result[0]} + 604800 WHERE post_id = {i}")
             conn.commit()
 
-    current_gmt = time.gmtime()
-    date = calendar.timegm(current_gmt)
+    # вывод постов
+
+    date = time_now()
     cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC")
     result = cursor.fetchall()
-    data = {}
+    cursor.execute(f"SELECT tag_id, karma_tag FROM user_tags WHERE user_id = {user_id} ORDER BY karma_tag DESC")
+    favorite_tags = cursor.fetchall()
+    karma_tag = {}
+    for i in favorite_tags:
+        karma_tag[f"{i[0]}"] = i[1]
+    data = []
     num = 1
     post_seen = get_seen_post(user_id)
     for i in result:
         if i[0] in post_seen:
             continue
-        data[f"{num}"] =(
-            {"id": i[0],
-             "text": i[1],
-             "date": i[2],
-             "user_id": i[3]})
+        else:
+            data.append( {
+                "id": i[0],
+                 "text": i[1],
+                 "date": i[2],
+                 "user_id": i[3],
+                 "total": i[9]})
+            cursor.execute(f"SELECT tag_id from post_tags WHERE post_id ={i[0]}")
+            tags = extract_sql_array(cursor.fetchall())
+            num_of_favorite_tags = 0
+            for j in extract_sql_array(favorite_tags):
+                if j in tags:
+                    g = favorite_tags[num_of_favorite_tags]
+                    index_post = data[-1]
+                    index_post["total"] += karma_tag[f"{j}"] * 2
+                    num_of_favorite_tags += 1
+
+            num += 1
+    post_list = sorted(data, key=lambda k: k['total'], reverse=True)
+    num = 1
+    data = {}
+    for i in post_list:
+        data[f"{num}"] = i
         num += 1
-        if len(data.keys()) == 10:
-            break
     return data
 
 
@@ -195,3 +219,18 @@ def get_user_date(user_id):
     result = cursor.fetchone()
     return result[2]
 
+# достает данные из листа sql
+
+def extract_sql_array(array):
+    result = []
+    for i in array:
+        result.append(i[0])
+
+    return result
+
+# штамп данного времени
+
+def time_now():
+    current_gmt = time.gmtime()
+    result = calendar.timegm(current_gmt)
+    return result

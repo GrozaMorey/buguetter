@@ -8,7 +8,6 @@ from app import jwt, app
 from hype import hype, reactio
 
 
-
 @jwt.token_in_blocklist_loader
 def check_token_blocklist(jwt_headers, jwt_data):
     jti = jwt_data["jti"]
@@ -45,9 +44,6 @@ def login():
             return {"response": "none user"}
 
 
-
-
-
 @app.route("/api/register", methods=['POST', 'GET'])
 def register():
     # Собирание данные с форм и хеширование паса
@@ -69,8 +65,6 @@ def register():
             # Занос в бд
         add_user(login, name, _hashed_password)
         return {"response": True}
-
-
 
 
 @app.route("/api/protect", methods=['POST'])
@@ -97,14 +91,17 @@ def logout():
     add_token_blacklist(token, token_exp, user_id)
     return {"response": "success"}
 
+
 @app.route("/api/status", methods=["GET"])
 def status():
     return {"status": check_db()}
+
 
 @app.route("/db")
 def db():
     db_script()
     return "good"
+
 
 @app.route("/api/publish_post", methods=["POST"])
 @jwt_required()
@@ -117,6 +114,7 @@ def publish_post():
         return {"response": True}
     return {"response": False}
 
+
 @app.route("/api/add_tags", methods=["POST"])
 @jwt_required()
 def add_tags():
@@ -125,6 +123,7 @@ def add_tags():
         add_tag(text,)
         return {"response": True}
     return {"response": True}
+
 
 @app.route("/api/add_reaction", methods=["POST"])
 @jwt_required()
@@ -138,12 +137,14 @@ def add_reactions():
         return {"response": True}
     return {"response": False}
 
+
 @app.route("/api/feed", methods=["POST"])
 @jwt_required()
 def feed():
     user_id = get_jwt_identity()
     post_id = request.json["post_id"]
-    return get_feed(post_id, user_id)
+    response = Response(json.dumps(get_feed(post_id, user_id)), mimetype='application/json')
+    return response
 
 
 @app.route("/api/get_user_data", methods=["POST"])
