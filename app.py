@@ -50,6 +50,14 @@ user_post = db.Table("user_post",
                      db.Column('date', db.Integer)
                      )
 
+
+user_tags = db.Table("user_tags",
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
+                     db.Column('karma_tag', db.Integer, default=0)
+                     )
+
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -59,6 +67,7 @@ class User(db.Model):
     post = db.relationship('Post', backref='post')
     jwt = db.relationship('Jwt', backref='black_jwt')
     post_seen = db.relationship('Post', secondary=user_post, backref="user")
+    user_tags = db.relationship('Tags', secondary=user_tags, backref="tags")
 
     def __init__(self, login, name, password):
         self.login = login

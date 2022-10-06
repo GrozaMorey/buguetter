@@ -127,13 +127,14 @@ def add_tags():
     return {"response": True}
 
 @app.route("/api/add_reaction", methods=["POST"])
-# @jwt_required()
+@jwt_required()
 def add_reactions():
     if request.method == "POST" and 'post_id' in request.json and 'reactions' in request.json:
         post_id = request.json["post_id"]
         reactions = request.json["reactions"]
+        user_id = get_jwt_identity()
 
-        add_reaction(post_id, reactions)
+        add_reaction(post_id, reactions, user_id)
         return {"response": True}
     return {"response": False}
 

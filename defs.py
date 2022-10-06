@@ -51,7 +51,7 @@ def get_users():
 
 
 def get_blocklist_db():
-    cursor.execute(f"SELECT * FROM invalid_tokens")
+    cursor.execute("SELECT * FROM invalid_tokens")
     tokens = cursor.fetchall()
     result = [{"id": i[0], "jti": i[1], "date": i[2], "user_id": i[3]} for i in tokens]
     current_gmt = time.gmtime()
@@ -59,6 +59,7 @@ def get_blocklist_db():
     for x in result:
         if int(x["date"]) <= time_stump:
             cursor.execute(f'DELETE FROM invalid_tokens WHERE id = {x["id"]}')
+            conn.commit()
     return result
 
 
@@ -109,7 +110,7 @@ def check_db():
         return False
 
 
-def add_reaction(post_id, reaction):
+def add_reaction(post_id, reaction, user_id):
     try:
         cursor.execute(f"UPDATE post SET {reaction} = {reaction} + 1 WHERE id = {post_id}")
         conn.commit()
@@ -117,7 +118,29 @@ def add_reaction(post_id, reaction):
         cursor.execute(f"UPDATE post SET karma = cool - shit - angry WHERE id = {post_id}")
         cursor.execute(f"UPDATE post SET total = popularity + karma WHERE id = {post_id}")
         conn.commit()
-        return True
+
+        cursor.execute(f"SELECT tag_id FROM post_tags WHERE post_id = {post_id}")
+        tags = cursor.fetchall()
+        if tags is not None:
+            sign = "-"
+            if reaction in ["cool"]:
+                sign = "+"
+            cursor.execute(f"SELECT tag_id FROM user_tags WHERE user_id = {user_id}")
+            karma = cursor.fetchall()
+            user = User.query.filter_by(id=user_id).first()
+            for i in tags:
+                print(i)
+                if i in karma:
+                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} and tag_id = {i[0]}")
+                    conn.commit()
+                else:
+                    print(karma)
+                    tag = Tags.query.filter_by(id=i[0]).first()
+                    user.user_tags.append(tag)
+                    db.session.commit()
+                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} and tag_id = {i[0]}")
+                    conn.commit()
+            return True
     except Exception as e:
         print(e)
         return False
