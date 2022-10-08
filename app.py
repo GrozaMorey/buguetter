@@ -4,31 +4,59 @@ from datetime import timedelta
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
 
-db_config = {}
-with open("db_config.txt") as file:
-    line = file.read().splitlines()
-for i in line:
-    key, *value = i.split(":")
-    db_config.update({key: value[0]})
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+db_config = {
+    "DB_HOST": os.environ.get('DB_HOST'),
+    "DB_NAME": os.environ.get('DB_NAME'),
+    "DB_USER": os.environ.get('DB_USER'),
+    "DB_PASS": os.environ.get('DB_PASS'),
+    "DB_PORT": os.environ.get('DB_PORT'),
+    "DB_TABLE": os.environ.get('DB_TABLE'),
+}
+
 
 
 app = Flask(__name__)
 CORS(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+app.config['BASE_URL'] = 'http://127.0.0.1:5000'
 app.config["SQLALCHEMY_DATABASE_URI"] = f'postgresql://{db_config["DB_USER"]}:{db_config["DB_PASS"]}@{db_config["DB_HOST"]}/{db_config["DB_NAME"]}'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=5)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+# TODO: Сдеалть https хотя бы в этом столетии
+app.config['JWT_COOKIE_SECURE'] = False
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 jwt = JWTManager(app)
 
 post_tags = db.Table('post_tags',
                      db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
                      db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
                      )
+
+
+user_post = db.Table("user_post",
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+                     db.Column('date', db.Integer)
+                     )
+
+
+user_tags = db.Table("user_tags",
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
+                     db.Column('karma_tag', db.Integer, default=0)
+                     )
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -38,7 +66,8 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     post = db.relationship('Post', backref='post')
     jwt = db.relationship('Jwt', backref='black_jwt')
-
+    post_seen = db.relationship('Post', secondary=user_post, backref="user")
+    user_tags = db.relationship('Tags', secondary=user_tags, backref="tags")
 
     def __init__(self, login, name, password):
         self.login = login
@@ -62,17 +91,26 @@ class Post(db.Model):
     __tablename__ = "post"
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(1000), nullable=False)
-    date = db.Column(db.Date)
+    date = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     cool = db.Column(db.Integer)
     shit = db.Column(db.Integer)
     angry = db.Column(db.Integer)
+    popularity = db.Column(db.Integer)
+    karma = db.Column(db.Integer)
+    total = db.Column(db.Integer)
     tags = db.relationship('Tags', secondary=post_tags, backref="taged")
 
     def __init__(self, text, date, user_id):
         self.text = text
         self.date = date
         self.user_id = user_id
+        self.cool = 0
+        self.shit = 0
+        self.angry = 0
+        self.popularity = 0
+        self.karma = 0
+        self.total = 0
 
 
 class Tags(db.Model):
@@ -82,3 +120,5 @@ class Tags(db.Model):
 
     def __init__(self, text):
         self.text = text
+
+
