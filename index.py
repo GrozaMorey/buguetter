@@ -1,21 +1,23 @@
 from flask import render_template, request, Response
 from flask import jsonify, make_response, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, \
+    set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
 from defs import *
 from db_script import db_script
 from app import jwt, app
 from hype import hype, reactio
 import json
 
+
 @jwt.expired_token_loader
 def expired_token_callback(x, z):
     return redirect(app.config['BASE_URL'] + '/api/refresh')
 
+
 @jwt.revoked_token_loader
 def revoked_callback(x, z):
     return jsonify({"error": 10})
-
 
 
 @jwt.invalid_token_loader
@@ -25,8 +27,7 @@ def invalid_token_callback(x, z):
 
 @jwt.unauthorized_loader
 def unauthorized_loader_callback(x):
-     return jsonify({"error": 8})
-
+    return jsonify({"error": 8})
 
 
 @jwt.token_in_blocklist_loader
@@ -110,7 +111,6 @@ def refresh():
     unset_access_cookies(response)
     set_access_cookies(response, access_token, max_age=2592000)
 
-
     return response
 
 
@@ -159,7 +159,7 @@ def publish_post():
 def add_tags():
     if request.method == "POST" and "text" in request.json:
         text = request.json["text"]
-        add_tag(text,)
+        add_tag(text, )
         return {"response": True}
     return {"response": True}
 
@@ -191,6 +191,7 @@ def feed():
 def get_user_data():
     user_id = get_jwt_identity()
     return {"name": f"{get_user_date(user_id)}"}
+
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":

@@ -70,14 +70,12 @@ def add_post(text, user_id, tags_id):
         db.session.commit()
         if tags_id != 0:
             cursor.execute(f"SELECT MAX(id) FROM post WHERE user_id = {user_id}")
-            id = cursor.fetchone()
+            post_id = cursor.fetchone()
             for i in tags_id:
-                post = Post.query.filter_by(id=id[0]).first()
+                post = Post.query.filter_by(id=post_id[0]).first()
                 tag = Tags.query.filter_by(id=i).first()
                 post.tags.append(tag)
                 db.session.commit()
-
-
         return True
     except Exception as e:
         print(e)
@@ -128,13 +126,15 @@ def add_reaction(post_id, reaction, user_id):
             user = User.query.filter_by(id=user_id).first()
             for i in tags:
                 if i in karma:
-                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} and tag_id = {i[0]}")
+                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} /"
+                                   f" and tag_id = {i[0]}")
                     conn.commit()
                 else:
                     tag = Tags.query.filter_by(id=i[0]).first()
                     user.user_tags.append(tag)
                     db.session.commit()
-                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} and tag_id = {i[0]}")
+                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} /"
+                                   f" and tag_id = {i[0]}")
                     conn.commit()
             return True
     except Exception as e:
@@ -174,22 +174,23 @@ def get_feed(post_id, user_id):
     result = cursor.fetchall()
     cursor.execute(f"SELECT tag_id, karma_tag FROM user_tags WHERE user_id = {user_id} ORDER BY karma_tag DESC")
     favorite_tags = cursor.fetchall()
-    karma_tag = {}
+    tag_karma = {}
     for i in favorite_tags:
-        karma_tag[f"{i[0]}"] = i[1]
+        tag_karma[f"{i[0]}"] = i[1]
     data = []
     num = 1
     post_seen = get_seen_post(user_id)
     for i in result:
+        # чек id поста на наличие в увиденном
         if i[0] in post_seen:
             continue
         else:
-            data.append( {
+            data.append({
                 "id": i[0],
-                 "text": i[1],
-                 "date": i[2],
-                 "user_id": i[3],
-                 "total": i[9]})
+                "text": i[1],
+                "date": i[2],
+                "user_id": i[3],
+                "total": i[9]})
 
             # суммирование тотала поста с кармой тега
             cursor.execute(f"SELECT tag_id from post_tags WHERE post_id ={i[0]}")
@@ -197,7 +198,7 @@ def get_feed(post_id, user_id):
             for j in extract_sql_array(favorite_tags):
                 if j in tags:
                     index_post = data[-1]
-                    index_post["total"] += karma_tag[f"{j}"] * 2
+                    index_post["total"] += tag_karma[f"{j}"] * 2
 
             num += 1
     post_list = sorted(data, key=lambda k: k['total'], reverse=True)
@@ -220,7 +221,6 @@ def extract_sql_array(array):
     result = []
     for i in array:
         result.append(i[0])
-
     return result
 
 
