@@ -1,16 +1,32 @@
 from flask import render_template, request, Response
 from flask import jsonify, make_response, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, set_refresh_cookies
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
 from defs import *
 from db_script import db_script
 from app import jwt, app
 from hype import hype, reactio
-
+import json
 
 @jwt.expired_token_loader
 def expired_token_callback(x, z):
     return redirect(app.config['BASE_URL'] + '/api/refresh')
+
+@jwt.revoked_token_loader
+def revoked_callback(x, z):
+    return jsonify({"error": 10})
+
+
+
+@jwt.invalid_token_loader
+def invalid_token_callback(x, z):
+    return jsonify({"error": 9})
+
+
+@jwt.unauthorized_loader
+def unauthorized_loader_callback(x):
+     return jsonify({"error": 8})
+
 
 
 @jwt.token_in_blocklist_loader
@@ -40,13 +56,15 @@ def login():
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
 
-                response = make_response(jsonify({"token": token}))
+                response = make_response(jsonify({"msg": "success"}))
                 set_refresh_cookies(response, refresh_token, max_age=2592000)
+                set_access_cookies(response, token, max_age=2592000)
                 return response
             else:
-                return {"response": "wrong password"}
+                return jsonify({"error": 3})
         else:
-            return {"response": "none user"}
+            return jsonify({"error": 2})
+    return jsonify({"error": 1})
 
 
 @app.route("/api/register", methods=['POST', 'GET'])
@@ -62,14 +80,18 @@ def register():
         # Проверка на валидность имени и логина
         account = cursor_select("login", login)
         if account:
-            return {"response": "Аккаунт с таким логином уже есть"}
+            return jsonify({"error": 4})
         account = cursor_select("name", name)
         if account:
-            return {"response": "Аккаунт с таким именем уже есть"}
+            return jsonify({"error": 5})
 
             # Занос в бд
-        add_user(login, name, _hashed_password)
-        return {"response": True}
+        try:
+            add_user(login, name, _hashed_password)
+            return {"response": True}
+        except Exception as e:
+            print(e)
+            return jsonify({"error": 6})
 
 
 @app.route("/api/protect", methods=['POST'])
@@ -84,17 +106,29 @@ def protect():
 def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
-    return jsonify({"access_token": access_token})
+    response = make_response(jsonify({"msg": "new_token"}))
+    unset_access_cookies(response)
+    set_access_cookies(response, access_token, max_age=2592000)
+
+
+    return response
 
 
 @app.route("/api/logout", methods=["DELETE"])
-@jwt_required(verify_type=False)
+@jwt_required(refresh=True)
 def logout():
     token = get_jwt()["jti"]
+    print(token)
     token_exp = get_jwt()["exp"]
     user_id = get_jwt_identity()
-    add_token_blacklist(token, token_exp, user_id)
-    return {"response": "success"}
+    try:
+        add_token_blacklist(token, token_exp, user_id)
+        response = make_response({"msg": "success"})
+        unset_jwt_cookies(response)
+        return response
+    except Exception as e:
+        print(e)
+        return jsonify({"error": 6})
 
 
 @app.route("/api/status", methods=["GET"])
@@ -117,7 +151,7 @@ def publish_post():
         tags = request.json["tags"]
         add_post(text, user_id, tags)
         return {"response": True}
-    return {"response": False}
+    return jsonify({"error": 7})
 
 
 @app.route("/api/add_tags", methods=["POST"])
@@ -158,6 +192,6 @@ def get_user_data():
     user_id = get_jwt_identity()
     return {"name": f"{get_user_date(user_id)}"}
 
-
+# TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":
     app.run(debug=True)

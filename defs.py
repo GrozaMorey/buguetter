@@ -1,10 +1,7 @@
-import json
 import time
 import calendar
 import psycopg2.extras
 from app import db, User, Jwt, Post, Tags, db_config
-from datetime import datetime
-from flask import Response
 
 
 DB_HOST = db_config["DB_HOST"]
@@ -146,6 +143,7 @@ def add_reaction(post_id, reaction, user_id):
 
 
 def get_seen_post(user_id):
+    # Список постов который видел юзер
     cursor.execute(f"SELECT * FROM user_post WHERE user_id = {user_id}")
     result = cursor.fetchall()
     post_id = []
@@ -159,7 +157,6 @@ def get_seen_post(user_id):
 
 def get_feed(post_id, user_id):
     # добавление поста в игнор лист
-
     if post_id is not False:
         user = User.query.filter_by(id=user_id).first()
         for i in post_id:
@@ -171,8 +168,7 @@ def get_feed(post_id, user_id):
             cursor.execute(f"UPDATE user_post SET date = {result[0]} + 604800 WHERE post_id = {i}")
             conn.commit()
 
-    # вывод постов
-
+    # вывод постов по тоталу и формирование словаря содержащий карму тега
     date = time_now()
     cursor.execute(f"SELECT * FROM post WHERE date BETWEEN {date - 604800} and {date} ORDER BY total DESC")
     result = cursor.fetchall()
@@ -194,15 +190,14 @@ def get_feed(post_id, user_id):
                  "date": i[2],
                  "user_id": i[3],
                  "total": i[9]})
+
+            # суммирование тотала поста с кармой тега
             cursor.execute(f"SELECT tag_id from post_tags WHERE post_id ={i[0]}")
             tags = extract_sql_array(cursor.fetchall())
-            num_of_favorite_tags = 0
             for j in extract_sql_array(favorite_tags):
                 if j in tags:
-                    g = favorite_tags[num_of_favorite_tags]
                     index_post = data[-1]
                     index_post["total"] += karma_tag[f"{j}"] * 2
-                    num_of_favorite_tags += 1
 
             num += 1
     post_list = sorted(data, key=lambda k: k['total'], reverse=True)
@@ -219,18 +214,18 @@ def get_user_date(user_id):
     result = cursor.fetchone()
     return result[2]
 
-# достает данные из листа sql
 
 def extract_sql_array(array):
+    # достает данные из листа sql
     result = []
     for i in array:
         result.append(i[0])
 
     return result
 
-# штамп данного времени
 
 def time_now():
+    # штамп данного времени
     current_gmt = time.gmtime()
     result = calendar.timegm(current_gmt)
     return result
