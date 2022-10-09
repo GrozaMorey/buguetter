@@ -252,7 +252,7 @@ def get_feed(post_id, user_id):
 
 
 @logger.catch()
-def get_user_date(user_id):
+def get_user_data(user_id):
     logger.info("get_user_date run")
     try:
         cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")

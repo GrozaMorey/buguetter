@@ -231,11 +231,11 @@ def feed():
 
 @app.route("/api/get_user_data", methods=["POST"])
 @jwt_required()
-def get_user_data():
+def return_user_data():
     logger.info("get user data run")
     user_id = get_jwt_identity()
     logger.info("get user data success")
-    return {"name": f"{get_user_date(user_id)}"}
+    return {"name": f"{get_user_data(user_id)}"}
 
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
