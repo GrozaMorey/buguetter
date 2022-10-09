@@ -67,7 +67,7 @@ def login():
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
 
-                response = make_response(jsonify({"msg": "success"}))
+                response = make_response(jsonify({"msg": "success", "error": 0}))
                 set_refresh_cookies(response, refresh_token, max_age=2592000)
                 set_access_cookies(response, token, max_age=2592000)
                 logger.info("login success")
@@ -125,7 +125,7 @@ def refresh():
     logger.info("refresh run")
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
-    response = make_response(jsonify({"msg": "new_token"}))
+    response = make_response(jsonify({"msg": "new_token", "error": 0}))
     set_access_cookies(response, access_token, max_age=2592000)
 
     return response
