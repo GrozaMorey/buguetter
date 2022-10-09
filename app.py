@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+from loguru import logger
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -19,6 +20,8 @@ db_config = {
     "DB_TABLE": os.environ.get('DB_TABLE'),
 }
 
+
+logger.add("debug.log", format="{time} {level} {message}", level="DEBUG")
 
 
 app = Flask(__name__)
@@ -86,6 +89,7 @@ class Jwt(db.Model):
         self.jwt = jwt
         self.date = date
         self.user_id = user_id
+
 
 class Post(db.Model):
     __tablename__ = "post"
