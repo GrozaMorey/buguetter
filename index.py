@@ -21,19 +21,21 @@ def expired_token_callback(x, z):
 @jwt.revoked_token_loader
 def revoked_callback(x, z):
     logger.info("revoked jwt loader run")
-    return jsonify({"error": 10})
+    return jsonify({"msg": "error", "error": 10})
 
 
 @jwt.invalid_token_loader
 def invalid_token_callback(x, z):
     logger.info("invalid jwt loader run")
-    return jsonify({"error": 9})
+    return jsonify({"msg": "error", "error": 9})
 
 
 @jwt.unauthorized_loader
 def unauthorized_loader_callback(x):
     logger.info("unauthorized jwt loader run")
-    return jsonify({"error": 8})
+    response = jsonify({"msg": "error", "error": 8})
+    unset_jwt_cookies(response)
+    return response
 
 
 @jwt.token_in_blocklist_loader
@@ -72,12 +74,12 @@ def login():
                 return response
             else:
                 logger.info("login wrong password")
-                return jsonify({"error": 3})
+                return jsonify({"msg": "error", "error": 3})
         else:
             logger.info("login wrong login")
-            return jsonify({"error": 2})
+            return jsonify({"msg": "error", "error": 2})
     logger.info("login data is null")
-    return jsonify({"error": 1})
+    return jsonify({"msg": "error", "error": 1})
 
 
 @app.route("/api/register", methods=['POST', 'GET'])
@@ -95,18 +97,18 @@ def register():
         account = cursor_select("login", login)
         if account:
             logger.info("register login already used")
-            return jsonify({"error": 4})
+            return jsonify({"msg": "error", "error": 4})
         account = cursor_select("name", name)
         if account:
             logger.info("register name already used")
-            return jsonify({"error": 5})
+            return jsonify({"msg": "error", "error": 5})
 
             # Занос в бд
 
         add_user(login, name, _hashed_password)
         logger.info("register success")
         logger.info("register success")
-        return {"msg": "success"}
+        return jsonify({"msg": "success", "error": 0})
 
 
 @app.route("/api/protect", methods=['POST'])
@@ -139,19 +141,22 @@ def logout():
     user_id = get_jwt_identity()
     try:
         add_token_blacklist(token, token_exp, user_id)
-        response = make_response({"msg": "success"})
+        response = make_response(jsonify({"msg": "success", "error": 0}))
         unset_jwt_cookies(response)
         logger.info("logout success")
         return response
     except:
         logger.error("logout error")
-        return jsonify({"error": 6})
+        return jsonify({"msg": "error", "error": 6})
 
 
 @app.route("/api/status", methods=["GET"])
 def status():
     logger.info("status run")
-    return {"msg": check_db()}
+    status = check_db
+    if status is not True:
+        return jsonify({"msg": "error", "error": 14})
+    return jsonify({"msg": "success", "error": 0})
 
 
 @app.route("/db")
@@ -164,16 +169,21 @@ def db():
 @jwt_required()
 def publish_post():
     logger.info("publish post run")
-    if request.method == "POST" and 'text' in request.json and 'tags' in request.json:
-        logger.info("publish post get data")
-        user_id = get_jwt_identity()
-        text = request.json["text"]
-        tags = request.json["tags"]
-        add_post(text, user_id, tags)
-        logger.info("publish post success")
-        return {"msg": True}
-    logger.info("publish post data is null")
-    return jsonify({"error": 7})
+    try:
+        if request.method == "POST" and 'text' in request.json and 'tags' in request.json:
+            logger.info("publish post get data")
+            user_id = get_jwt_identity()
+            text = request.json["text"]
+            tags = request.json["tags"]
+            post = add_post(text, user_id, tags)
+            if post is not True:
+                return jsonify({"msg": "error", "error": 13})
+            logger.info("publish post success")
+            return jsonify({"msg": "success", "error": 0})
+        logger.info("publish post data is null")
+    except Exception as e:
+        logger.error(f"publish post error {e}")
+        return jsonify({"msg": "error", "error": 7})
 
 
 @app.route("/api/add_tags", methods=["POST"])
@@ -183,11 +193,12 @@ def add_tags():
     if request.method == "POST" and "text" in request.json:
         logger.info("add tags get data")
         text = request.json["text"]
-        add_tag(text, )
+        tag = add_tag(text)
+        if tag is not True:
+            return jsonify({"msg": "error", "error": 14})
         logger.info("add tags success")
-        return {"msg": "success"}
+        return jsonify({"msg": "success", "error": 0})
     logger.info("add tags data is null")
-    return {"error": "True"}
 
 
 @app.route("/api/add_reaction", methods=["POST"])
@@ -202,9 +213,9 @@ def add_reactions():
 
         add_reaction(post_id, reactions, user_id)
         logger.info("add reaction success")
-        return {"msg": "success"}
+        return jsonify({"msg": "success"})
     logger.info("add reaction data is null")
-    return {"error": 12}
+    return jsonify({"msg": "error", "error": 12})
 
 
 @app.route("/api/feed", methods=["POST"])

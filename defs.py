@@ -15,8 +15,8 @@ try:
     conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     logger.info("psycopg2 connect success")
-except:
-    logger.error("psycopg2 connect error")
+except Exception as e:
+    logger.error(f"psycopg2 connect error/ {e}")
 
 
 @logger.catch()
@@ -27,8 +27,8 @@ def cursor_select(column, arg):
         account = cursor.fetchone()
         logger.info("cursor_select success")
         return account
-    except:
-        logger.error("cursor select error")
+    except Exception as e:
+        logger.error(f"cursor select error/ args = {column, arg} {e}")
 
 
 @logger.catch()
@@ -40,8 +40,8 @@ def add_user(login, name, _hashed_password):
         db.session.commit()
         logger.info("add_user success")
         return True
-    except:
-        logger.error("add_user error")
+    except Exception as e:
+        logger.error(f"add_user error/ {e}")
         return False
 
 
@@ -54,8 +54,8 @@ def add_token_blacklist(jti, token_exp, user_id):
         db.session.commit()
         logger.info("add_token_blacklist success")
         return True
-    except:
-        logger.error("add_token_blacklist error")
+    except Exception as e:
+        logger.error(f"add_token_blacklist error/ args = {jti, token_exp, user_id}  {e}")
         return False
 
 
@@ -74,8 +74,8 @@ def get_blocklist_db():
                 conn.commit()
         logger.info("get_blocklist_db success")
         return result
-    except:
-        logger.error("get_blocklist_db error")
+    except Exception as e:
+        logger.error(f"get_blocklist_db error/ {e}")
 
 
 @logger.catch()
@@ -96,8 +96,8 @@ def add_post(text, user_id, tags_id):
                 db.session.commit()
         logger.info("add_post success")
         return True
-    except:
-        logger.error("add_post error")
+    except Exception as e:
+        logger.error(f"add_post error/ args = {text, user_id, tags_id} {e}")
         return False
 
 
@@ -111,7 +111,7 @@ def add_tag(text):
         logger.info("add_tag success")
         return True
     except Exception as e:
-        logger.error("add_tag error")
+        logger.error(f"add_tag error/ {e}")
         return False
 
 
@@ -126,9 +126,8 @@ def check_db():
             return True
         logger.info("check_db false")
         return False
-    except:
-        logger.error("check_db error")
-        return False
+    except Exception as e:
+        logger.error(f"check_db error/ {e}")
 
 
 @logger.catch()
@@ -167,8 +166,8 @@ def add_reaction(post_id, reaction, user_id):
                     conn.commit()
             logger.info("add_reaction success")
             return True
-    except:
-        logger.error("add_reaction error")
+    except Exception as e:
+        logger.error(f"add_reaction error/ {e}")
         return False
 
 
@@ -187,8 +186,8 @@ def get_seen_post(user_id):
                 cursor.execute(f"DELETE FROM user_post WHERE user_id = {i[0]} and post_id = {i[1]}")
                 logger.info("get_seen_post run")
         return post_id
-    except:
-        logger.error("get_seen_post error")
+    except Exception as e:
+        logger.error(f"get_seen_post error/ args = {user_id} {e}")
 
 
 @logger.catch()
@@ -248,8 +247,8 @@ def get_feed(post_id, user_id):
             num += 1
         logger.info("get_feed success")
         return data
-    except:
-        logger.error("get_feed error")
+    except Exception as e:
+        logger.error(f"get_feed error/ args = {post_id, user_id} {e}")
 
 
 @logger.catch()
@@ -260,8 +259,8 @@ def get_user_date(user_id):
         result = cursor.fetchone()
         logger.info("get_user_date success")
         return result[2]
-    except:
-        logger.error("get_user_date error")
+    except Exception as e:
+        logger.error(f"get_user_date error/ {e}")
 
 
 @logger.catch()
@@ -274,8 +273,8 @@ def extract_sql_array(array):
             result.append(i[0])
         logger.info("extract_sql_array success")
         return result
-    except:
-        logger.error("extract_sql_array error")
+    except Exception as e:
+        logger.error(f"extract_sql_array error/ {e}")
 
 
 @logger.catch()
@@ -287,5 +286,5 @@ def time_now():
         result = calendar.timegm(current_gmt)
         logger.info("time_now success")
         return result
-    except:
-        logger.error("time_now error")
+    except Exception as e:
+        logger.error(f"time_now error/ {e}")
