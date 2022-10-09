@@ -190,7 +190,7 @@ def feed():
 @jwt_required()
 def get_user_data():
     user_id = get_jwt_identity()
-    return {"name": f"{get_user_date(user_id)}"}
+    return {"name": f"{get_user_data(user_id)}"}
 
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
