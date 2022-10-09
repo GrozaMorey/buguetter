@@ -210,7 +210,7 @@ def get_feed(post_id, user_id):
     return data
 
 
-def get_user_date(user_id):
+def get_user_data(user_id):
     cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
     result = cursor.fetchone()
     return result[2]
