@@ -251,16 +251,10 @@ def get_feed(post_id, user_id):
         logger.error(f"get_feed error/ user:{get_jwt_identity} args = {post_id, user_id} {e}")
 
 
-@logger.catch()
 def get_user_data(user_id):
-    logger.info("get_user_date run")
-    try:
-        cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
-        result = cursor.fetchone()
-        logger.info("get_user_date success")
-        return result[2]
-    except Exception as e:
-        logger.error(f"get_user_date error/ user:{get_jwt_identity} {e}")
+    cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
+    result = cursor.fetchone()
+    return result[2]
 
 
 @logger.catch()
