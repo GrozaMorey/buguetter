@@ -136,8 +136,8 @@ def add_reaction(post_id, reaction, user_id):
     try:
         cursor.execute(f"UPDATE post SET {reaction} = {reaction} + 1 WHERE id = {post_id}")
         conn.commit()
-        cursor.execute(f"UPDATE post SET popularity = cool + shit + angry WHERE id = {post_id}")
-        cursor.execute(f"UPDATE post SET karma = cool - shit - angry WHERE id = {post_id}")
+        cursor.execute(f"UPDATE post SET popularity = cool + shit + angry + nice WHERE id = {post_id}")
+        cursor.execute(f"UPDATE post SET karma = cool + nice - shit - angry WHERE id = {post_id}")
         cursor.execute(f"UPDATE post SET total = popularity + karma WHERE id = {post_id}")
         conn.commit()
 
@@ -145,15 +145,19 @@ def add_reaction(post_id, reaction, user_id):
         tags = cursor.fetchall()
         if tags is not None:
             sign = "-"
-            if reaction in ["cool"]:
+            if reaction in ["cool", "nice"]:
                 sign = "+"
+                post = Post.query.filter_by(id=post_id).first()
+                user = User.query.filter_by(id=user_id).first()
+                user.user_post_likes.append(post)
+                db.session.commit()
             cursor.execute(f"SELECT tag_id FROM user_tags WHERE user_id = {user_id}")
             karma = cursor.fetchall()
             user = User.query.filter_by(id=user_id).first()
             for i in tags:
                 if i in karma:
                     logger.info("add_reaction put + karma for user_tags")
-                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} /"
+                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id}"
                                    f" and tag_id = {i[0]}")
                     conn.commit()
                 else:
@@ -161,13 +165,13 @@ def add_reaction(post_id, reaction, user_id):
                     tag = Tags.query.filter_by(id=i[0]).first()
                     user.user_tags.append(tag)
                     db.session.commit()
-                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id} /"
+                    cursor.execute(f"UPDATE user_tags SET karma_tag = karma_tag {sign} 1 WHERE user_id = {user_id}"
                                    f" and tag_id = {i[0]}")
                     conn.commit()
             logger.info("add_reaction success")
             return True
     except Exception as e:
-        logger.error(f"add_reaction error/ user:{get_jwt_identity} {e}")
+        logger.error(f"add_reaction error/ user:{user_id} {e}")
         return False
 
 
@@ -229,7 +233,6 @@ def get_feed(post_id, user_id):
                     "date": i[2],
                     "user_id": i[3],
                     "total": i[9]})
-
                 # суммирование тотала поста с кармой тега
                 cursor.execute(f"SELECT tag_id from post_tags WHERE post_id ={i[0]}")
                 tags = extract_sql_array(cursor.fetchall())
@@ -248,7 +251,7 @@ def get_feed(post_id, user_id):
         logger.info("get_feed success")
         return data
     except Exception as e:
-        logger.error(f"get_feed error/ user:{get_jwt_identity} args = {post_id, user_id} {e}")
+        logger.error(f"get_feed error/ user:{user_id} args = {post_id} {e}")
 
 
 def get_user_data(user_id):
@@ -279,4 +282,55 @@ def time_now():
         logger.info("time_now success")
         return result
     except Exception as e:
-        logger.error(f"time_now error/ user:{get_jwt_identity} {e}")
+        logger.error(f"time_now error/ {e}")
+
+
+@logger.catch()
+def get_post_user(user_id):
+    logger.info("get_post_user run")
+    try:
+        data = {}
+        cursor.execute(f"SELECT * FROM post WHERE user_id = {user_id}")
+        result = cursor.fetchall()
+        if not result:
+            return {"msg": "error", "error": 15}
+        for i in result:
+            data[f"{i[0]}"] = {
+                "text": i[1],
+                "data": i[2],
+                "cool": i[4],
+                "shit": i[5],
+                "angry": i[6],
+                "nice": i[10]
+            }
+        return data
+    except Exception as e:
+        logger.error(f"get_post_user error/ user:{user_id} {e}")
+
+
+def get_likes(user_id):
+    logger.info("get_likes run")
+    try:
+        cursor.execute(f"SELECT post_id FROM user_post_likes WHERE user_id = {user_id}")
+        post_id = []
+        data = {}
+        result = cursor.fetchall()
+        if not result:
+            return {"msg": "error", "error": 15}
+        for i in result:
+            post_id.append(i[0])
+        cursor.execute(f"SELECT * FROM post WHERE id in ({str(post_id)[1:-1]})")
+        result = cursor.fetchall()
+        for i in result:
+            data[f"{i[0]}"] = {
+                "text": i[1],
+                "data": i[2],
+                "cool": i[4],
+                "shit": i[5],
+                "angry": i[6],
+                "nice": i[10]
+            }
+        logger.info("get_likes success")
+        return data
+    except Exception as e:
+        logger.error(f"get_likes error/ user:{user_id} {e}")

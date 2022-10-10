@@ -31,7 +31,7 @@ migrate = Migrate(app, db)
 app.config['BASE_URL'] = 'http://127.0.0.1:5000'
 app.config["SQLALCHEMY_DATABASE_URI"] = f'postgresql://{db_config["DB_USER"]}:{db_config["DB_PASS"]}@{db_config["DB_HOST"]}/{db_config["DB_NAME"]}'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=5)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config['JWT_BLACKLIST_ENABLED'] = True
@@ -54,6 +54,12 @@ user_post = db.Table("user_post",
                      )
 
 
+user_post_likes = db.Table("user_post_likes",
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id'))
+                     )
+
+
 user_tags = db.Table("user_tags",
                      db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
                      db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
@@ -71,6 +77,7 @@ class User(db.Model):
     jwt = db.relationship('Jwt', backref='black_jwt')
     post_seen = db.relationship('Post', secondary=user_post, backref="user")
     user_tags = db.relationship('Tags', secondary=user_tags, backref="tags")
+    user_post_likes = db.relationship('Post', secondary=user_post_likes, backref="post_likes")
 
     def __init__(self, login, name, password):
         self.login = login
@@ -100,6 +107,7 @@ class Post(db.Model):
     cool = db.Column(db.Integer)
     shit = db.Column(db.Integer)
     angry = db.Column(db.Integer)
+    nice = db.Column(db.Integer)
     popularity = db.Column(db.Integer)
     karma = db.Column(db.Integer)
     total = db.Column(db.Integer)
@@ -112,6 +120,7 @@ class Post(db.Model):
         self.cool = 0
         self.shit = 0
         self.angry = 0
+        self.nice = 0
         self.popularity = 0
         self.karma = 0
         self.total = 0

@@ -43,9 +43,10 @@ def check_token_blocklist(jwt_headers, jwt_data):
     logger.info("blacklist jwt loader run")
     jti = jwt_data["jti"]
     tokens = get_blocklist_db()
-    for i in tokens:
-        if jti in i["jti"]:
-            return True
+    if tokens is not None:
+        for i in tokens:
+            if jti in i["jti"]:
+                return True
     return False
 
 
@@ -239,6 +240,25 @@ def return_user_data():
     logger.info("get user data success")
     return {"name": f"{user_name}"}
 
+
+@app.route("/api/get_user_post", methods=["GET"])
+@jwt_required()
+def get_user_post():
+    logger.info("get user post run")
+    user_id = request.json["user_id"]
+    post = get_post_user(user_id)
+    logger.info("get user post success")
+    return post
+
+
+@app.route("/api/get_user_like", methods=["GET"])
+@jwt_required()
+def get_user_like():
+    logger.info("get user like run")
+    user_id = request.json["user_id"]
+    post = get_likes(user_id)
+    logger.info("get user like success")
+    return post
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":
