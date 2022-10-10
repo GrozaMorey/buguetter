@@ -140,6 +140,7 @@ def logout():
     token_exp = get_jwt()["exp"]
     user_id = get_jwt_identity()
     try:
+        logger.info("try add token to blacklist run")
         add_token_blacklist(token, token_exp, user_id)
         response = make_response(jsonify({"msg": "success", "error": 0}))
         unset_jwt_cookies(response)
@@ -234,8 +235,9 @@ def feed():
 def return_user_data():
     logger.info("get user data run")
     user_id = get_jwt_identity()
+    user_name = get_user_data(user_id)
     logger.info("get user data success")
-    return {"name": f"{get_user_data(user_id)}"}
+    return {"name": f"{user_name}"}
 
 
 # TODO: Включить ssl_context='adhoc' перед деплоем

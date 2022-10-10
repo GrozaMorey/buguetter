@@ -2,6 +2,7 @@ import time
 import calendar
 import psycopg2.extras
 from app import db, User, Jwt, Post, Tags, db_config, logger
+from flask_jwt_extended import get_jwt_identity
 
 DB_HOST = db_config["DB_HOST"]
 DB_NAME = db_config["DB_NAME"]
@@ -66,8 +67,7 @@ def get_blocklist_db():
         cursor.execute("SELECT * FROM invalid_tokens")
         tokens = cursor.fetchall()
         result = [{"id": i[0], "jti": i[1], "date": i[2], "user_id": i[3]} for i in tokens]
-        current_gmt = time.gmtime()
-        time_stump = calendar.timegm(current_gmt)
+        time_stump = time_now()
         for x in result:
             if int(x["date"]) <= time_stump:
                 cursor.execute(f'DELETE FROM invalid_tokens WHERE id = {x["id"]}')
@@ -97,7 +97,7 @@ def add_post(text, user_id, tags_id):
         logger.info("add_post success")
         return True
     except Exception as e:
-        logger.error(f"add_post error/ args = {text, user_id, tags_id} {e}")
+        logger.error(f"add_post error/ user:{get_jwt_identity} args = {text, user_id, tags_id} {e}")
         return False
 
 
@@ -111,7 +111,7 @@ def add_tag(text):
         logger.info("add_tag success")
         return True
     except Exception as e:
-        logger.error(f"add_tag error/ {e}")
+        logger.error(f"add_tag error/ user:{get_jwt_identity} {e}")
         return False
 
 
@@ -167,7 +167,7 @@ def add_reaction(post_id, reaction, user_id):
             logger.info("add_reaction success")
             return True
     except Exception as e:
-        logger.error(f"add_reaction error/ {e}")
+        logger.error(f"add_reaction error/ user:{get_jwt_identity} {e}")
         return False
 
 
@@ -187,7 +187,7 @@ def get_seen_post(user_id):
                 logger.info("get_seen_post run")
         return post_id
     except Exception as e:
-        logger.error(f"get_seen_post error/ args = {user_id} {e}")
+        logger.error(f"get_seen_post error/ user:{get_jwt_identity} args = {user_id} {e}")
 
 
 @logger.catch()
@@ -248,7 +248,7 @@ def get_feed(post_id, user_id):
         logger.info("get_feed success")
         return data
     except Exception as e:
-        logger.error(f"get_feed error/ args = {post_id, user_id} {e}")
+        logger.error(f"get_feed error/ user:{get_jwt_identity} args = {post_id, user_id} {e}")
 
 
 @logger.catch()
@@ -260,21 +260,19 @@ def get_user_data(user_id):
         logger.info("get_user_date success")
         return result[2]
     except Exception as e:
-        logger.error(f"get_user_date error/ {e}")
+        logger.error(f"get_user_date error/ user:{get_jwt_identity} {e}")
 
 
 @logger.catch()
 def extract_sql_array(array):
-    logger.info("extract_sql_array run")
     try:
         # достает данные из листа sql
         result = []
         for i in array:
             result.append(i[0])
-        logger.info("extract_sql_array success")
         return result
     except Exception as e:
-        logger.error(f"extract_sql_array error/ {e}")
+        logger.error(f"extract_sql_array error/ user:{get_jwt_identity} {e}")
 
 
 @logger.catch()
@@ -287,4 +285,4 @@ def time_now():
         logger.info("time_now success")
         return result
     except Exception as e:
-        logger.error(f"time_now error/ {e}")
+        logger.error(f"time_now error/ user:{get_jwt_identity} {e}")
