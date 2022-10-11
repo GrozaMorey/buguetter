@@ -298,10 +298,11 @@ def get_post_user(user_id):
             data[f"{i[0]}"] = {
                 "text": i[1],
                 "data": i[2],
+                "reactions": {
                 "cool": i[4],
                 "shit": i[5],
                 "angry": i[6],
-                "nice": i[10]
+                "nice": i[10]}
             }
         return data
     except Exception as e:
