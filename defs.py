@@ -316,7 +316,7 @@ def get_likes(user_id):
         data = {}
         result = cursor.fetchall()
         if not result:
-            return {"msg": "error", "error": 15}
+            return {"msg": "error", "error": 14}
         for i in result:
             post_id.append(i[0])
         cursor.execute(f"SELECT * FROM post WHERE id in ({str(post_id)[1:-1]})")
@@ -325,10 +325,11 @@ def get_likes(user_id):
             data[f"{i[0]}"] = {
                 "text": i[1],
                 "data": i[2],
+                "reactions": {
                 "cool": i[4],
                 "shit": i[5],
                 "angry": i[6],
-                "nice": i[10]
+                "nice": i[10]}
             }
         logger.info("get_likes success")
         return data
@@ -344,4 +345,4 @@ def get_another_user_data(name):
         return {"user_id": result[0]}
     except Exception as e:
         logger.error(f"get_another_user_data error/args = {name} {e}")
-        return {"msg": "error", "error": 16}
+        return {"msg": "error", "error": 15}

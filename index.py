@@ -21,19 +21,19 @@ def expired_token_callback(x, z):
 @jwt.revoked_token_loader
 def revoked_callback(x, z):
     logger.info("revoked jwt loader run")
-    return jsonify({"msg": "error", "error": 10})
+    return jsonify({"msg": "error", "error": 9})
 
 
 @jwt.invalid_token_loader
 def invalid_token_callback(x, z):
     logger.info("invalid jwt loader run")
-    return jsonify({"msg": "error", "error": 9})
+    return jsonify({"msg": "error", "error": 8})
 
 
 @jwt.unauthorized_loader
 def unauthorized_loader_callback(x):
     logger.info("unauthorized jwt loader run")
-    response = jsonify({"msg": "error", "error": 8})
+    response = jsonify({"msg": "error", "error": 7})
     unset_jwt_cookies(response)
     return response
 
@@ -157,7 +157,7 @@ def status():
     logger.info("status run")
     status = check_db()
     if status is not True:
-        return jsonify({"msg": "error", "error": 14})
+        return jsonify({"msg": "error", "error": 13})
     return jsonify({"msg": "success", "error": 0})
 
 
@@ -179,13 +179,13 @@ def publish_post():
             tags = request.json["tags"]
             post = add_post(text, user_id, tags)
             if post is not True:
-                return jsonify({"msg": "error", "error": 13})
+                return jsonify({"msg": "error", "error": 12})
             logger.info("publish post success")
             return jsonify({"msg": "success", "error": 0})
         logger.info("publish post data is null")
     except Exception as e:
         logger.error(f"publish post error {e}")
-        return jsonify({"msg": "error", "error": 7})
+        return jsonify({"msg": "error", "error": 6})
 
 
 @app.route("/api/add_tags", methods=["POST"])
@@ -197,7 +197,7 @@ def add_tags():
         text = request.json["text"]
         tag = add_tag(text)
         if tag is not True:
-            return jsonify({"msg": "error", "error": 14})
+            return jsonify({"msg": "error", "error": 10})
         logger.info("add tags success")
         return jsonify({"msg": "success", "error": 0})
     logger.info("add tags data is null")
@@ -217,7 +217,7 @@ def add_reactions():
         logger.info("add reaction success")
         return jsonify({"msg": "success"})
     logger.info("add reaction data is null")
-    return jsonify({"msg": "error", "error": 12})
+    return jsonify({"msg": "error", "error": 11})
 
 
 @app.route("/api/feed", methods=["POST"])
