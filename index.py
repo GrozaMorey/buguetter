@@ -155,7 +155,7 @@ def logout():
 @app.route("/api/status", methods=["GET"])
 def status():
     logger.info("status run")
-    status = check_db
+    status = check_db()
     if status is not True:
         return jsonify({"msg": "error", "error": 14})
     return jsonify({"msg": "success", "error": 0})
