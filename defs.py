@@ -257,7 +257,7 @@ def get_feed(post_id, user_id):
 def get_user_data(user_id):
     cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
     result = cursor.fetchone()
-    return result[2]
+    return {"user_id": result[0], "name": result[2]}
 
 
 @logger.catch()
@@ -334,3 +334,14 @@ def get_likes(user_id):
         return data
     except Exception as e:
         logger.error(f"get_likes error/ user:{user_id} {e}")
+
+
+def get_another_user_data(name):
+    logger.info("get_another_user_data run")
+    try:
+        cursor.execute(f"SELECT * FROM users WHERE name = '{name}'")
+        result = cursor.fetchone()
+        return {"user_id": result[0]}
+    except Exception as e:
+        logger.error(f"get_another_user_data error/args = {name} {e}")
+        return {"msg": "error", "error": 16}
