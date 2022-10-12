@@ -230,7 +230,8 @@ def return_user_data():
 def get_user_post():
     logger.info("get user post run")
     user_id = request.json["user_id"]
-    post = get_post_user(user_id)
+    request_user_id = get_jwt_identity()
+    post = get_post_user(user_id, request_user_id)
     logger.info("get user post success")
     return post
 
