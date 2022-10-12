@@ -406,3 +406,51 @@ def get_another_user_data(name):
     except Exception as e:
         logger.error(f"get_another_user_data error/args = {name} {e}")
         return {"msg": "error", "error": 15}
+
+
+def delete_account(user_id):
+    try:
+        logger.info("delete_account run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"DELETE FROM user WHERE id = {user_id}")
+        connection.commit()
+        logger.info("delete_account success")
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return True
+    except Exception as e:
+        logger.error(f"delete_account error/ {e}")
+        return False
+
+
+def delete_post(post_id):
+    try:
+        logger.info("delete_post run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"DELETE FROM post WHERE id = {post_id}")
+        connection.commit()
+        logger.info("delete_post success")
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return True
+    except Exception as e:
+        logger.error(f"delete_post error/ {e}")
+        return False
+
+
+def delete_like(user_id, post_id):
+    try:
+        logger.info("delete_like run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"DELETE FROM user_post_likes WHERE user_id = {user_id} and post_id = {post_id}")
+        connection.commit()
+        logger.info("delete_like success")
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return True
+    except Exception as e:
+        logger.error(f"delete_post error/ {e}")
+        return False

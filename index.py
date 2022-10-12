@@ -254,6 +254,30 @@ def get_another_user():
     return result
 
 
+@app.route("/api/delete_account", methods=["POST"])
+@jwt_required()
+def delete_account_route():
+    user_id = get_jwt_identity()
+    delete_account(user_id)
+    return {"msg": "success", "error": 0}
+
+
+@app.route("/api/delete_post", methods=["POST"])
+@jwt_required()
+def delete_post_route():
+    post_id = request.json["post_id"]
+    delete_post(post_id)
+    return {"msg": "success", "error": 0}
+
+
+@app.route("/api/delete_like", methods=["POST"])
+@jwt_required()
+def delete_like_route():
+    post_id = request.json["post_id"]
+    user_id = get_jwt_identity()
+    delete_like(user_id, post_id)
+    return {"msg": "success", "error": 0}
+
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":
