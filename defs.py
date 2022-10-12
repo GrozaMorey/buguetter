@@ -180,10 +180,13 @@ def add_reaction(post_id, reaction, user_id):
             sign = "-"
             if reaction in ["cool", "nice"]:
                 sign = "+"
-                post = Post.query.filter_by(id=post_id).first()
-                user = User.query.filter_by(id=user_id).first()
-                user.user_post_likes.append(post)
-                db.session.commit()
+            post = Post.query.filter_by(id=post_id).first()
+            user = User.query.filter_by(id=user_id).first()
+            user.user_post_likes.append(post)
+            db.session.commit()
+            cursor.execute(f"UPDATE user_post_likes SET reaction = '{reaction}'"
+                           f" WHERE user_id = {user_id} and post_id = {post_id}")
+            connection.commit()
             cursor.execute(f"SELECT tag_id FROM user_tags WHERE user_id = {user_id}")
             karma = cursor.fetchall()
             user = User.query.filter_by(id=user_id).first()
@@ -233,6 +236,7 @@ def get_seen_post(user_id):
         logger.error(f"get_seen_post error/ user:{get_jwt_identity} args = {user_id} {e}")
 
 
+# КРАСНАЯ ЗОНА!!! НЕ МЕНЯТЬ!!! НИКТО НЕ ПОНИМАЕТ ЧТО ТУТ НАПИСАННО
 @logger.catch()
 def get_feed(post_id, user_id):
     logger.info("get_feed run")
@@ -259,7 +263,7 @@ def get_feed(post_id, user_id):
         favorite_tags = cursor.fetchall()
         tag_karma = {}
         for i in favorite_tags:
-            tag_karma[f"{i[0]}"] = i[1]
+            tag_karma[i[0]] = i[1]
         data = []
         num = 1
         post_seen = get_seen_post(user_id)
@@ -353,8 +357,8 @@ def get_post_user(user_id):
                 "angry": i[6],
                 "nice": i[10]}
             }
-            cursor.close()
-            postgres_pool.putconn(connection)
+        cursor.close()
+        postgres_pool.putconn(connection)
         return data
     except Exception as e:
         logger.error(f"get_post_user error/ user:{user_id} {e}")

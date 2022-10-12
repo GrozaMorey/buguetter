@@ -197,7 +197,6 @@ def add_reactions():
         post_id = request.json["post_id"]
         reactions = request.json["reactions"]
         user_id = get_jwt_identity()
-
         add_reaction(post_id, reactions, user_id)
         logger.info("add reaction success")
         return jsonify({"msg": "success"})

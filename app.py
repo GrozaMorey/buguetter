@@ -56,7 +56,8 @@ user_post = db.Table("user_post",
 
 user_post_likes = db.Table("user_post_likes",
                      db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
-                     db.Column('post_id', db.Integer, db.ForeignKey('post.id'))
+                     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+                     db.Column('reaction', db.String)
                      )
 
 
