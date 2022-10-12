@@ -79,17 +79,31 @@ def get_blocklist_db():
 
 
 @logger.catch()
-def add_post(text, user_id, tags_id):
+def add_post(text, user_id, tags_name):
     logger.info("add_post run")
     try:
         date = time_now()
         post = Post(text, date, user_id)
         db.session.add(post)
         db.session.commit()
-        if tags_id != 0:
+        tags_id_list = []
+        if tags_name is not "":
             cursor.execute(f"SELECT MAX(id) FROM post WHERE user_id = {user_id}")
             post_id = cursor.fetchone()
-            for i in tags_id:
+            print(tags_name)
+            for i in tags_name:
+                cursor.execute(f"SELECT id FROM tags WHERE text = '{i}'")
+                tags_id = cursor.fetchone()
+                if not tags_id:
+                    add_tag(i)
+                    cursor.execute(f"SELECT id FROM tags WHERE text = ('{tags_name}')")
+                    tags_id = cursor.fetchone()
+                    tags_id_list.append(tags_id[0])
+                else:
+                    tags_id_list.append(tags_id[0])
+            print(tags_id_list)
+            for i in tags_id_list:
+                print(i)
                 post = Post.query.filter_by(id=post_id[0]).first()
                 tag = Tags.query.filter_by(id=i).first()
                 post.tags.append(tag)
@@ -97,7 +111,7 @@ def add_post(text, user_id, tags_id):
         logger.info("add_post success")
         return True
     except Exception as e:
-        logger.error(f"add_post error/ user:{get_jwt_identity} args = {text, user_id, tags_id} {e}")
+        logger.error(f"add_post error/ user:{get_jwt_identity} args = {text, user_id, tags_name} {e}")
         return False
 
 

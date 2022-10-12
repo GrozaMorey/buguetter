@@ -188,21 +188,6 @@ def publish_post():
         return jsonify({"msg": "error", "error": 6})
 
 
-@app.route("/api/add_tags", methods=["POST"])
-@jwt_required()
-def add_tags():
-    logger.info("add tags run")
-    if request.method == "POST" and "text" in request.json:
-        logger.info("add tags get data")
-        text = request.json["text"]
-        tag = add_tag(text)
-        if tag is not True:
-            return jsonify({"msg": "error", "error": 10})
-        logger.info("add tags success")
-        return jsonify({"msg": "success", "error": 0})
-    logger.info("add tags data is null")
-
-
 @app.route("/api/add_reaction", methods=["POST"])
 @jwt_required()
 def add_reactions():
