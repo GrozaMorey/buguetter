@@ -14,12 +14,17 @@ import json
 def expired_token_callback(x, jwt):
     logger.info("expired jwt loader run")
     if jwt["type"] == "refresh":
-        return make_response(jsonify({"msg": "error", "error": 16}))
-    response = requests.get(app.config['BASE_URL'] + '/api/refresh', cookies={"refresh_token_cookie": request.cookies.get("refresh_token_cookie")})
-    resp = make_response(response.content)
-    cookie = response.cookies["access_token_cookie"]
-    set_access_cookies(resp, cookie, max_age=2592000)
-    return resp
+        return False
+    else:
+        request_refresh = requests.get(app.config['BASE_URL'] + '/api/refresh', cookies={"refresh_token_cookie": request.cookies.get("refresh_token_cookie")})
+        response = make_response(request_refresh.content)
+        if not request_refresh.cookies:
+            response = make_response(jsonify({"msg": "error", "error": 16}))
+            unset_jwt_cookies(response)
+            return response
+        cookie = request_refresh.cookies["access_token_cookie"]
+        set_access_cookies(response, cookie, max_age=2592000)
+        return response
 
 
 @jwt.revoked_token_loader
