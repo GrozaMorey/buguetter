@@ -306,9 +306,10 @@ def get_user_data(user_id):
     cursor = connection.cursor()
     cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
     result = cursor.fetchone()
+    print(result)
     cursor.close()
     postgres_pool.putconn(connection)
-    return {"user_id": result[0], "name": result[2]}
+    return {"user_id": result[0], "name": result[2], "following": result[4], "follow": result[5]}
 
 
 @logger.catch()
