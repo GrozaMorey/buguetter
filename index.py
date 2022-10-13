@@ -308,6 +308,28 @@ def follow_route():
     return {"msg": "success", "error": 0}
 
 
+@app.route("/api/add_comment", methods=["POST"])
+@jwt_required()
+def add_comment_route():
+    logger.info("add comment run")
+    text = request.json["text"]
+    post_id = request.json["post_id"]
+    user_id = get_jwt_identity()
+    add_comment(text, post_id, user_id)
+    logger.info("add comment success")
+    return {"msg": "success", "error": 0}
+
+
+@app.route("/api/get_comment", methods=["POST"])
+@jwt_required()
+def get_comment_route():
+    logger.info("get comment run")
+    post_id = request.json["post_id"]
+    response = get_comment(post_id)
+    logger.info("get comment success")
+    return response
+
+
 # TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":
     app.run(debug=True)

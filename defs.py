@@ -1,7 +1,7 @@
 import time
 import calendar
 import psycopg2.extras
-from app import db, User, Jwt, Post, Tags, db_config, logger
+from app import db, User, Jwt, Post, Tags, db_config, logger, Comment
 from flask_jwt_extended import get_jwt_identity
 from psycopg2 import pool
 
@@ -103,11 +103,13 @@ def add_post(text, user_id, tags_name):
             post_id = cursor.fetchone()
             print(tags_name)
             for i in tags_name:
+                print(i)
                 cursor.execute(f"SELECT id FROM tags WHERE text = '{i}'")
                 tags_id = cursor.fetchone()
                 if not tags_id:
+                    print(i)
                     add_tag(i)
-                    cursor.execute(f"SELECT id FROM tags WHERE text = ('{tags_name}')")
+                    cursor.execute(f"SELECT id FROM tags WHERE text = ('{i}')")
                     tags_id = cursor.fetchone()
                     tags_id_list.append(tags_id[0])
                 else:
@@ -122,7 +124,7 @@ def add_post(text, user_id, tags_name):
         postgres_pool.putconn(connection)
         return True
     except Exception as e:
-        logger.error(f"add_post error/ user:{get_jwt_identity} args = {text, user_id, tags_name} {e}")
+        logger.error(f"add_post error/ args = {text, user_id, tags_name} {e}")
         return False
 
 
@@ -136,7 +138,7 @@ def add_tag(text):
         logger.info("add_tag success")
         return True
     except Exception as e:
-        logger.error(f"add_tag error/ user:{get_jwt_identity} {e}")
+        logger.error(f"add_tag error/{e}")
         return False
 
 
@@ -503,4 +505,41 @@ def follow(user_id, follow_id):
         return True
     except Exception as e:
         logger.error(f"follow error/ {e}")
+        return False
+
+
+def add_comment(text, post_id, user_id):
+    try:
+        logger.info("add_comment run")
+        comment = Comment(text, post_id, user_id)
+        db.session.add(comment)
+        db.session.commit()
+        logger.info("add_comment success")
+        return True
+    except Exception as e:
+        logger.error(f"add_comment error/ {e}")
+        return False
+
+
+def get_comment(post_id):
+    try:
+        logger.info("get_comment run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT * FROM comment WHERE post_id = {post_id}")
+        result = cursor.fetchall()
+        if not result:
+            return {"msg": "error", "error": 17}
+        data = {}
+        for i in result:
+            data[i[0]] = {
+                "text": i[1],
+                "author_id": i[2]
+            }
+        logger.info("get_comment success")
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return data
+    except Exception as e:
+        logger.error(f"get_comment error/ {e}")
         return False

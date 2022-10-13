@@ -90,6 +90,7 @@ class User(db.Model):
                                 primaryjoin=(user_user_following.c.user_id == id),
                                 secondaryjoin=(user_user_following.c.following_user_id == id),
                                 backref="follow")
+    comment = db.relationship('Comment', backref='comment_user_id')
 
     def __init__(self, login, name, password):
         self.login = login
@@ -124,6 +125,7 @@ class Post(db.Model):
     karma = db.Column(db.Integer)
     total = db.Column(db.Integer)
     tags = db.relationship('Tags', secondary=post_tags, backref="taged")
+    comment = db.relationship('Comment', backref='comment_post_id')
 
     def __init__(self, text, date, user_id):
         self.text = text
@@ -145,5 +147,18 @@ class Tags(db.Model):
 
     def __init__(self, text):
         self.text = text
+
+
+class Comment(db.Model):
+    __tablename__ = "comment"
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(100), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def __init__(self, text, post_id, author_id):
+        self.text = text
+        self.post_id = post_id
+        self.author_id = author_id
 
 
