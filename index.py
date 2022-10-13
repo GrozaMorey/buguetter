@@ -1,5 +1,5 @@
-from flask import render_template, request, Response
-from flask import jsonify, make_response, redirect
+from flask import render_template, request, Response, jsonify, make_response, redirect
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, \
     set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
@@ -11,11 +11,15 @@ import json
 
 
 @jwt.expired_token_loader
-def expired_token_callback(x, z):
+def expired_token_callback(x, jwt):
     logger.info("expired jwt loader run")
-    response = redirect(app.config['BASE_URL'] + '/api/refresh')
-    unset_access_cookies(response)
-    return response
+    if jwt["type"] == "refresh":
+        return make_response(jsonify({"msg": "error", "error": 16}))
+    response = requests.get(app.config['BASE_URL'] + '/api/refresh', cookies={"refresh_token_cookie": request.cookies.get("refresh_token_cookie")})
+    resp = make_response(response.content)
+    cookie = response.cookies["access_token_cookie"]
+    set_access_cookies(resp, cookie, max_age=2592000)
+    return resp
 
 
 @jwt.revoked_token_loader
@@ -123,11 +127,13 @@ def protect():
 @app.route('/api/refresh', methods=['GET'])
 @jwt_required(refresh=True)
 def refresh():
+    if request.method == "OPTIONS":
+        print("dsfsd")
     logger.info("refresh run")
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
-    response = make_response(jsonify({"msg": "new_token", "error": 0}))
-    set_access_cookies(response, access_token, max_age=2592000)
+    response = jsonify({"msg": "new_token", "error": 0})
+    set_access_cookies(response, access_token)
 
     return response
 

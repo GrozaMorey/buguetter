@@ -31,7 +31,7 @@ migrate = Migrate(app, db)
 app.config['BASE_URL'] = 'http://127.0.0.1:5000'
 app.config["SQLALCHEMY_DATABASE_URI"] = f'postgresql://{db_config["DB_USER"]}:{db_config["DB_PASS"]}@{db_config["DB_HOST"]}/{db_config["DB_NAME"]}'
 app.config["JWT_SECRET_KEY"] = "LKSDGKL:SD"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=5)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config['JWT_BLACKLIST_ENABLED'] = True
