@@ -148,7 +148,6 @@ def refresh():
 def logout():
     logger.info("logout run")
     token = get_jwt()["jti"]
-    print(token)
     token_exp = get_jwt()["exp"]
     user_id = get_jwt_identity()
     try:

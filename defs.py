@@ -372,26 +372,33 @@ def get_likes(user_id):
     try:
         connection = postgres_pool.getconn()
         cursor = connection.cursor()
-        cursor.execute(f"SELECT post_id FROM user_post_likes WHERE user_id = {user_id}")
+        cursor.execute(f"SELECT post_id, reaction FROM user_post_likes WHERE user_id = {user_id}")
         post_id = []
+        reaction = []
         data = {}
         result = cursor.fetchall()
         if not result:
             return {"msg": "error", "error": 14}
         for i in result:
             post_id.append(i[0])
+            reaction.append(i[1])
+        print(post_id)
         cursor.execute(f"SELECT * FROM post WHERE id in ({str(post_id)[1:-1]})")
         result = cursor.fetchall()
+        num = 0
         for i in result:
+            print(len(i))
             data[f"{i[0]}"] = {
                 "text": i[1],
-                "data": i[2],
+                "date": i[2],
                 "reactions": {
                 "cool": i[4],
                 "shit": i[5],
                 "angry": i[6],
-                "nice": i[10]}
+                "nice": i[10],
+                "user_reaction": reaction[num]}
             }
+            num += 1
         logger.info("get_likes success")
         cursor.close()
         postgres_pool.putconn(connection)
