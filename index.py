@@ -127,7 +127,6 @@ def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     response = make_response(jsonify({"msg": "new_token", "error": 0}))
-    unset_access_cookies(response)
     set_access_cookies(response, access_token, max_age=2592000)
 
     return response
