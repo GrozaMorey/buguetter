@@ -73,7 +73,7 @@ def login():
 
         account = cursor_select("login", login)
         if account is not None:
-            if check_password_hash(account[-1], password) is True:
+            if check_password_hash(account[-3], password) is True:
                 token = create_access_token(identity=account[0])
                 refresh_token = create_refresh_token(identity=account[0])
 
@@ -259,33 +259,52 @@ def get_user_like():
 @app.route("/api/get_another_user", methods=["GET"])
 @jwt_required()
 def get_another_user():
+    logger.info("get another user run")
     name = request.json["name"]
     result = get_another_user_data(name)
+    logger.info("get another user success")
     return result
 
 
 @app.route("/api/delete_account", methods=["POST"])
 @jwt_required()
 def delete_account_route():
+    logger.info("delete account like run")
     user_id = get_jwt_identity()
     delete_account(user_id)
+    logger.info("delete account success")
     return {"msg": "success", "error": 0}
 
 
 @app.route("/api/delete_post", methods=["POST"])
 @jwt_required()
 def delete_post_route():
+    logger.info("delete post run")
     post_id = request.json["post_id"]
     delete_post(post_id)
+    logger.info("delete post success")
     return {"msg": "success", "error": 0}
 
 
 @app.route("/api/delete_like", methods=["POST"])
 @jwt_required()
 def delete_like_route():
+    logger.info("delete like run")
     post_id = request.json["post_id"]
     user_id = get_jwt_identity()
     delete_like(user_id, post_id)
+    logger.info("delete like success")
+    return {"msg": "success", "error": 0}
+
+
+@app.route("/api/follow", methods=["POST"])
+@jwt_required()
+def follow_route():
+    logger.info("follow run")
+    follow_id = request.json["follow_id"]
+    user_id = get_jwt_identity()
+    follow(user_id, follow_id)
+    logger.info("follow success")
     return {"msg": "success", "error": 0}
 
 

@@ -468,3 +468,38 @@ def delete_like(user_id, post_id):
     except Exception as e:
         logger.error(f"delete_post error/ {e}")
         return False
+
+
+def shablon():
+    try:
+        logger.info(" run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        logger.info(" success")
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return True
+    except Exception as e:
+        logger.error(f" error/ {e}")
+        return False
+
+
+def follow(user_id, follow_id):
+    try:
+        logger.info("follow run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        user = User.query.filter_by(id=user_id).first()
+        follow = User.query.filter_by(id=follow_id).first()
+        user.following.append(follow)
+        db.session.commit()
+        cursor.execute(f"UPDATE users SET count_of_follow = count_of_follow + 1 WHERE id = {user_id}")
+        cursor.execute(f"UPDATE users SET count_of_follow = count_of_following + 1 WHERE id = {follow_id}")
+        connection.commit()
+        cursor.close()
+        postgres_pool.putconn(connection)
+        logger.info("follow success")
+        return True
+    except Exception as e:
+        logger.error(f"follow error/ {e}")
+        return False
