@@ -337,7 +337,7 @@ def time_now():
 
 
 @logger.catch()
-def get_post_user(user_id, request_user_id):
+def get_post_user(user_id):
     logger.info("get_post_user run")
     try:
         connection = postgres_pool.getconn()
@@ -348,8 +348,6 @@ def get_post_user(user_id, request_user_id):
         if not result:
             return {"msg": "error", "error": 15}
         for i in result:
-            cursor.execute(f"SELECT reaction FROM user_post_likes WHERE user_id = {request_user_id} and post_id = {i[0]}")
-            reaction = cursor.fetchone()
             data[f"{i[0]}"] = {
                 "text": i[1],
                 "data": i[2],
@@ -357,8 +355,7 @@ def get_post_user(user_id, request_user_id):
                 "cool": i[4],
                 "shit": i[5],
                 "angry": i[6],
-                "nice": i[10],
-                "user_reaction": reaction[0] if reaction is not None else reaction}
+                "nice": i[10]}
             }
         cursor.close()
         postgres_pool.putconn(connection)
