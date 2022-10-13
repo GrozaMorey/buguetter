@@ -497,7 +497,7 @@ def follow(user_id, follow_id):
         user.following.append(follow)
         db.session.commit()
         cursor.execute(f"UPDATE users SET count_of_follow = count_of_follow + 1 WHERE id = {user_id}")
-        cursor.execute(f"UPDATE users SET count_of_follow = count_of_following + 1 WHERE id = {follow_id}")
+        cursor.execute(f"UPDATE users SET count_of_following = count_of_following + 1 WHERE id = {follow_id}")
         connection.commit()
         cursor.close()
         postgres_pool.putconn(connection)
@@ -542,4 +542,22 @@ def get_comment(post_id):
         return data
     except Exception as e:
         logger.error(f"get_comment error/ {e}")
+        return False
+
+
+def unfollow(user_id, follow_id):
+    try:
+        logger.info("delete_like run")
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"DELETE FROM user_user_following WHERE user_id = {user_id} and following_user_id = {follow_id}")
+        cursor.execute(f"UPDATE users SET count_of_follow = count_of_follow - 1 WHERE id = {user_id}")
+        cursor.execute(f"UPDATE users SET count_of_following = count_of_following - 1 WHERE id = {follow_id}")
+        connection.commit()
+        logger.info("delete_like success")
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return True
+    except Exception as e:
+        logger.error(f"delete_post error/ {e}")
         return False

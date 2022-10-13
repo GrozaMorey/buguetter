@@ -235,7 +235,7 @@ def return_user_data():
     return user_name
 
 
-@app.route("/api/get_user_post", methods=["GET"])
+@app.route("/api/get_user_post", methods=["POST"])
 @jwt_required()
 def get_user_post():
     logger.info("get user post run")
@@ -246,7 +246,7 @@ def get_user_post():
     return post
 
 
-@app.route("/api/get_user_like", methods=["GET"])
+@app.route("/api/get_user_like", methods=["POST"])
 @jwt_required()
 def get_user_like():
     logger.info("get user like run")
@@ -256,7 +256,7 @@ def get_user_like():
     return post
 
 
-@app.route("/api/get_another_user", methods=["GET"])
+@app.route("/api/get_another_user", methods=["POST"])
 @jwt_required()
 def get_another_user():
     logger.info("get another user run")
@@ -266,7 +266,7 @@ def get_another_user():
     return result
 
 
-@app.route("/api/delete_account", methods=["POST"])
+@app.route("/api/delete_account", methods=["DELETE"])
 @jwt_required()
 def delete_account_route():
     logger.info("delete account like run")
@@ -276,7 +276,7 @@ def delete_account_route():
     return {"msg": "success", "error": 0}
 
 
-@app.route("/api/delete_post", methods=["POST"])
+@app.route("/api/delete_post", methods=["DELETE"])
 @jwt_required()
 def delete_post_route():
     logger.info("delete post run")
@@ -286,7 +286,7 @@ def delete_post_route():
     return {"msg": "success", "error": 0}
 
 
-@app.route("/api/delete_like", methods=["POST"])
+@app.route("/api/delete_like", methods=["DELETE"])
 @jwt_required()
 def delete_like_route():
     logger.info("delete like run")
@@ -329,6 +329,16 @@ def get_comment_route():
     logger.info("get comment success")
     return response
 
+
+@app.route("/api/unfollow", methods=["DELETE"])
+@jwt_required()
+def unfollow_route():
+    logger.info("unfollow run")
+    follow_id = request.json["follow_id"]
+    user_id = get_jwt_identity()
+    unfollow(user_id, follow_id)
+    logger.info("unfollow success")
+    return {"msg": "success", "error": 0}
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":
