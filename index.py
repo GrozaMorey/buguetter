@@ -8,6 +8,8 @@ from db_script import db_script
 from app import jwt, app, logger
 from hype import hype, reactio
 import json
+from strawberry.flask.views import GraphQLView
+from schema import schema
 
 
 @jwt.expired_token_loader
@@ -17,7 +19,7 @@ def expired_token_callback(x, jwt):
         return False
     else:
         request_refresh = requests.get(app.config['BASE_URL'] + '/api/refresh', cookies={"refresh_token_cookie": request.cookies.get("refresh_token_cookie")})
-        response = make_response(request_refresh.content)
+        response = make_response(request_refresh.json())
         if not request_refresh.cookies:
             response = make_response(jsonify({"msg": "error", "error": 16}))
             unset_jwt_cookies(response)
@@ -58,6 +60,14 @@ def check_token_blocklist(jwt_headers, jwt_data):
                 return True
     return False
 
+def graphql_token_view():
+    view = GraphQLView.as_view('graphql', schema=schema)
+    view = jwt_required()(view)
+    return view
+
+app.add_url_rule(
+    "/graphql",
+    view_func=graphql_token_view())
 
 @app.route('/')
 def index():
@@ -74,8 +84,12 @@ def login():
         account = cursor_select("login", login)
         if account is not None:
             if check_password_hash(account[-3], password) is True:
-                token = create_access_token(identity=account[0])
-                refresh_token = create_refresh_token(identity=account[0])
+                identify = {
+                    "user_id":account[0],
+                    "username": account[1]
+                }
+                token = create_access_token(identity=identify)
+                refresh_token = create_refresh_token(identity=identify)
 
                 response = make_response(jsonify({"msg": "success", "error": 0}))
                 set_refresh_cookies(response, refresh_token, max_age=2592000)
@@ -121,7 +135,7 @@ def register():
         return jsonify({"msg": "success", "error": 0})
 
 
-@app.route("/api/protect", methods=['POST'])
+@app.route("/api/protect", methods=['GET'])
 @jwt_required()
 def protect():
     logger.info("protect run")
@@ -137,7 +151,14 @@ def refresh():
     logger.info("refresh run")
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
-    response = jsonify({"msg": "new_token", "error": 0})
+    graphql_answer = {
+    "data": {
+        "check": {
+            "status": "refreshed your ass boy"
+        }
+    }
+}
+    response = make_response(graphql_answer)
     set_access_cookies(response, access_token)
 
     return response
@@ -214,7 +235,7 @@ def add_reactions():
     return jsonify({"msg": "error", "error": 11})
 
 
-@app.route("/api/feed", methods=["POST"])
+@app.route("/api/feed", methods=["POST", "GET"])
 @jwt_required()
 def feed():
     logger.info("feed run")

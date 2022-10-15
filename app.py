@@ -7,6 +7,8 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from loguru import logger
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, \
+    set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -25,7 +27,6 @@ logger.add("debug.log", format="{time} {level} {message}", level="DEBUG")
 
 
 app = Flask(__name__)
-CORS(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.config['BASE_URL'] = 'http://127.0.0.1:5000'

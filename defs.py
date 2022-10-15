@@ -561,3 +561,63 @@ def unfollow(user_id, follow_id):
     except Exception as e:
         logger.error(f"delete_post error/ {e}")
         return False
+
+
+"""Замок для графов"""
+
+def get_user_id(user_name):
+    try:
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT id FROM users WHERE name = '{user_name}'")
+        result = cursor.fetchone()
+        for i in result:
+            result = i
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return result
+    except Exception as e:
+        return f"Ошибка запроса {e}"
+
+
+def get_user_name(user_name):
+    try:
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT name FROM users WHERE name = '{user_name}'")
+        result = cursor.fetchone()
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return result
+    except Exception as e:
+        return f"Ошибка запроса {e}"
+
+
+def get_user_following(user_name):
+    try:
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT count_of_following FROM users WHERE name = '{user_name}'")
+        result = cursor.fetchone()
+        for i in result:
+            result = i
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return result
+    except Exception as e:
+        return f"Ошибка запроса {e}"
+
+
+def get_user_follow(user_name):
+    try:
+        connection = postgres_pool.getconn()
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT count_of_follow FROM users WHERE name = '{user_name}'")
+        result = cursor.fetchone()
+        for i in result:
+            result = i
+        cursor.close()
+        postgres_pool.putconn(connection)
+        return result
+    except Exception as e:
+        return f"Ошибка запроса {e}"
