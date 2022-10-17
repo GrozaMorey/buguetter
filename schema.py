@@ -32,7 +32,7 @@ class Posts:
     id: int
     text: str
     date: int
-    user_id: str
+    author: str
     comment: typing.List[Comment]
     author_id: int
     post_id: int
@@ -53,7 +53,7 @@ class Query:
     def user(self, id: int) -> Users_Realationship:
         return User.query.filter_by(id=id).first()
     @strawberry.field
-    def post(self, by: typing.Optional[str], id: typing.Optional[int]) -> typing.List[Posts] :
+    def post(self, by: typing.Optional[str], id: typing.Optional[int]) -> typing.List[Posts]:
         match by:
             case "profile":
                 return Post.query.filter_by(user_id=id).all()

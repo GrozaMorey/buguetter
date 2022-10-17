@@ -83,7 +83,7 @@ class User(db.Model):
     followers = db.Column(db.Integer, default=0)
     count_of_following = db.Column(db.Integer, default=0)
     deleted = db.Column(db.Integer, default=0)
-    data = db.Column(db.Integer)
+    date = db.Column(db.Integer)
     post = db.relationship('Post', backref='post')
     jwt = db.relationship('Jwt', backref='black_jwt')
     post_seen = db.relationship('Post', secondary=user_post, backref="user")
@@ -132,10 +132,10 @@ class Post(db.Model):
     comment = db.relationship('Comment', backref='comment_post_id')
     likes = db.relationship('User', secondary=user_post_likes, backref="post_likes")
 
-    def __init__(self, text, date, user_id):
+    def __init__(self, text, date, author):
         self.text = text
         self.date = date
-        self.user_id = user_id
+        self.author = author
         self.cool = 0
         self.shit = 0
         self.angry = 0

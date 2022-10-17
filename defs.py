@@ -100,15 +100,12 @@ def add_post(text, user_id, tags_name):
         db.session.commit()
         tags_id_list = []
         if tags_name is not "":
-            cursor.execute(f"SELECT MAX(id) FROM post WHERE user_id = {user_id}")
+            cursor.execute(f"SELECT MAX(id) FROM post WHERE author = {user_id}")
             post_id = cursor.fetchone()
-            print(tags_name)
             for i in tags_name:
-                print(i)
                 cursor.execute(f"SELECT id FROM tags WHERE text = '{i}'")
                 tags_id = cursor.fetchone()
                 if not tags_id:
-                    print(i)
                     add_tag(i)
                     cursor.execute(f"SELECT id FROM tags WHERE text = ('{i}')")
                     tags_id = cursor.fetchone()

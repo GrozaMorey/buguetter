@@ -77,7 +77,7 @@ def login():
 
         account = cursor_select("login", login)
         if account is not None:
-            if check_password_hash(account[-3], password) is True:
+            if check_password_hash(account[-5], password) is True:
                 identify = {
                     "user_id":account[0],
                     "username": account[1]
