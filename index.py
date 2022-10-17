@@ -12,6 +12,7 @@ from strawberry.flask.views import GraphQLView
 from schema import schema
 
 
+
 @jwt.expired_token_loader
 def expired_token_callback(x, jwt):
     logger.info("expired jwt loader run")
@@ -60,14 +61,7 @@ def check_token_blocklist(jwt_headers, jwt_data):
                 return True
     return False
 
-def graphql_token_view():
-    view = GraphQLView.as_view('graphql', schema=schema)
-    view = jwt_required()(view)
-    return view
-
-app.add_url_rule(
-    "/graphql",
-    view_func=graphql_token_view())
+app.add_url_rule('/graphql', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True))
 
 @app.route('/')
 def index():
@@ -323,7 +317,7 @@ def delete_like_route():
 def follow_route():
     logger.info("follow run")
     follow_id = request.json["follow_id"]
-    user_id = get_jwt_identity()
+    user_id = get_jwt_identity()["user_id"]
     follow(user_id, follow_id)
     logger.info("follow success")
     return {"msg": "success", "error": 0}

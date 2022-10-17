@@ -569,6 +569,7 @@ def get_user_id(user_name):
     try:
         connection = postgres_pool.getconn()
         cursor = connection.cursor()
+        print("user")
         cursor.execute(f"SELECT id FROM users WHERE name = '{user_name}'")
         result = cursor.fetchone()
         for i in result:
@@ -612,6 +613,7 @@ def get_user_follow(user_name):
     try:
         connection = postgres_pool.getconn()
         cursor = connection.cursor()
+        print("Foolow")
         cursor.execute(f"SELECT count_of_follow FROM users WHERE name = '{user_name}'")
         result = cursor.fetchone()
         for i in result:
