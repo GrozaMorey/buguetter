@@ -72,5 +72,8 @@ class Query:
         if user:
             return "success"
 
+    @strawberry.field
+    def find_post(self, id:int) -> Posts:
+        return Post.query.filter_by(id=id).one()
 
 schema = strawberry.Schema(query=Query)
