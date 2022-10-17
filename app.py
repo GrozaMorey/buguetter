@@ -56,8 +56,8 @@ user_post = db.Table("user_post",
 
 
 user_post_likes = db.Table("user_post_likes",
-                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
                      db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
                      db.Column('reaction', db.String)
                      )
 
@@ -80,23 +80,26 @@ class User(db.Model):
     login = db.Column(db.String(40), nullable=False)
     name = db.Column(db.String(40), nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    count_of_follow = db.Column(db.Integer, default=0)
+    followers = db.Column(db.Integer, default=0)
     count_of_following = db.Column(db.Integer, default=0)
+    deleted = db.Column(db.Integer, default=0)
+    data = db.Column(db.Integer)
     post = db.relationship('Post', backref='post')
     jwt = db.relationship('Jwt', backref='black_jwt')
     post_seen = db.relationship('Post', secondary=user_post, backref="user")
     user_tags = db.relationship('Tags', secondary=user_tags, backref="tags")
-    user_post_likes = db.relationship('Post', secondary=user_post_likes, backref="post_likes")
     following = db.relationship('User', secondary=user_user_following,
                                 primaryjoin=(user_user_following.c.user_id == id),
                                 secondaryjoin=(user_user_following.c.following_user_id == id),
-                                backref="follow")
+                                backref="follower")
     comment = db.relationship('Comment', backref='comment_user_id')
+    user_post_likes = db.relationship('Post', secondary=user_post_likes, backref="post_likes")
 
-    def __init__(self, login, name, password):
+    def __init__(self, login, name, password, date):
         self.login = login
         self.name = name
         self.password = password
+        self.date = date
 
 
 class Jwt(db.Model):
@@ -117,7 +120,7 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(1000), nullable=False)
     date = db.Column(db.Integer)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    author = db.Column(db.Integer, db.ForeignKey('users.id'))
     cool = db.Column(db.Integer)
     shit = db.Column(db.Integer)
     angry = db.Column(db.Integer)
@@ -127,6 +130,7 @@ class Post(db.Model):
     total = db.Column(db.Integer)
     tags = db.relationship('Tags', secondary=post_tags, backref="taged")
     comment = db.relationship('Comment', backref='comment_post_id')
+    likes = db.relationship('User', secondary=user_post_likes, backref="post_likes")
 
     def __init__(self, text, date, user_id):
         self.text = text
@@ -156,10 +160,12 @@ class Comment(db.Model):
     text = db.Column(db.String(100), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    date = db.Column(db.Integer)
 
-    def __init__(self, text, post_id, author_id):
+    def __init__(self, text, post_id, author_id, date):
         self.text = text
         self.post_id = post_id
         self.author_id = author_id
+        self.date = date
 
 

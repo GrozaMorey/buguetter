@@ -199,7 +199,7 @@ def publish_post():
     try:
         if request.method == "POST" and 'text' in request.json and 'tags' in request.json:
             logger.info("publish post get data")
-            user_id = get_jwt_identity()
+            user_id = get_jwt_identity()["user_id"]
             text = request.json["text"]
             tags = request.json["tags"]
             post = add_post(text, user_id, tags)
@@ -221,7 +221,7 @@ def add_reactions():
         logger.info("add reaction get data ")
         post_id = request.json["post_id"]
         reactions = request.json["reactions"]
-        user_id = get_jwt_identity()
+        user_id = get_jwt_identity()["user_id"]
         add_reaction(post_id, reactions, user_id)
         logger.info("add reaction success")
         return jsonify({"msg": "success"})
@@ -329,7 +329,7 @@ def add_comment_route():
     logger.info("add comment run")
     text = request.json["text"]
     post_id = request.json["post_id"]
-    user_id = get_jwt_identity()
+    user_id = get_jwt_identity()["user_id"]
     add_comment(text, post_id, user_id)
     logger.info("add comment success")
     return {"msg": "success", "error": 0}

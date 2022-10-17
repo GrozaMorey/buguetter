@@ -41,7 +41,8 @@ def cursor_select(column, arg):
 def add_user(login, name, _hashed_password):
     logger.info("add_user run")
     try:
-        user = User(login, name, _hashed_password)
+        date = time_now()
+        user = User(login, name, _hashed_password, date)
         db.session.add(user)
         db.session.commit()
         logger.info("add_user success")
@@ -184,7 +185,7 @@ def add_reaction(post_id, reaction, user_id):
                 sign = "+"
             post = Post.query.filter_by(id=post_id).first()
             user = User.query.filter_by(id=user_id).first()
-            user.user_post_likes.append(post)
+            post.user_post_likes.append(user)
             db.session.commit()
             cursor.execute(f"UPDATE user_post_likes SET reaction = '{reaction}'"
                            f" WHERE user_id = {user_id} and post_id = {post_id}")
@@ -511,7 +512,8 @@ def follow(user_id, follow_id):
 def add_comment(text, post_id, user_id):
     try:
         logger.info("add_comment run")
-        comment = Comment(text, post_id, user_id)
+        date = time_now()
+        comment = Comment(text, post_id, user_id, date)
         db.session.add(comment)
         db.session.commit()
         logger.info("add_comment success")
