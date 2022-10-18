@@ -1,8 +1,8 @@
 import strawberry
 from app import *
 from defs import *
-import typing
-
+from typing import Union, Optional, Any, List
+from strawberry.types import Info
 
 
 @strawberry.type
@@ -10,6 +10,13 @@ class Users:
     id: int
     name: str
     date: int
+
+
+@strawberry.type
+class Status:
+    msg: str
+    error: int
+
 
 @strawberry.type
 class Reaction:
@@ -33,30 +40,39 @@ class Posts:
     text: str
     date: int
     author: str
-    comment: typing.List[Comment]
+    comment: List[Comment]
     author_id: int
     post_id: int
     def get_relation_of_table(self):
         return db.session.query(user_post_likes).join(Post).filter_by(id=self.id).all()
-    likes: typing.List[Reaction] = strawberry.field(resolver=get_relation_of_table)
+    likes: List[Reaction] = strawberry.field(resolver=get_relation_of_table)
 
 
 @strawberry.type
 class Users_Realationship(Users):
-    follower: typing.List[Users]
-    following: typing.List[Users]
+    follower: List[Users]
+    following: List[Users]
 
 
 @strawberry.type
 class Query:
+
     @strawberry.field
+    @jwt_required()
     def user(self, id: int) -> Users_Realationship:
+        if id == 0:
+            id = get_jwt_identity()["user_id"]
         return User.query.filter_by(id=id).first()
+
+
     @strawberry.field
-    def post(self, by: typing.Optional[str], id: typing.Optional[int]) -> typing.List[Posts]:
-        match by:
+    @jwt_required()
+    def feed(self, offset: int, limit: int, selection: str, id: Optional[int]) -> List[Posts]:
+        if id == 0:
+            id = get_jwt_identity()["user_id"]
+        match selection:
             case "profile":
-                return Post.query.filter_by(user_id=id).all()
+                return Post.query.filter_by(author=id).offset(offset).limit(limit).all()
             case "profile_likes":
                 user = User.query.filter_by(id=id).one()
                 return user.user_post_likes
@@ -64,16 +80,56 @@ class Query:
                 user = User.query.filter_by(id=id).one()
                 comment = user.comment
                 return comment
-        return Post.query.order_by(Post.date.desc()).all()
+        return Post.query.order_by(Post.date.desc()).offset(offset).limit(limit).all()
+
 
     @strawberry.field
-    def status(self) -> str:
+    def status(self) -> Status:
         user = User.query.filter_by(id=1).one()
         if user:
-            return "success"
+            return Status(msg="success", error=0)
+
 
     @strawberry.field
-    def find_post(self, id:int) -> Posts:
+    def find(self, id: int) -> Posts:
         return Post.query.filter_by(id=id).one()
 
-schema = strawberry.Schema(query=Query)
+
+@strawberry.type
+class Mutation:
+    @strawberry.field
+    def register(self,login: str, name: str, password: str) -> str:
+        return register(login, name, password)
+
+
+    @strawberry.field
+    def login(self, login: str, password: str, info:Info) -> Status:
+        tokens = loging(login, password)
+        if len(tokens) == 3:
+            return Status(msg=tokens["msg"], error=tokens["error"])
+        info.context["response"].set_cookie(key="access_token_cookie", value=tokens[0], max_age=2592000, httponly=True)
+        info.context["response"].set_cookie(key="refresh_token_cookie", value=tokens[1], max_age=2592000, httponly=True)
+        return Status(msg="success", error=0)
+
+
+    @strawberry.field
+    @jwt_required()
+    def logout(self, info: Info) -> Status:
+        token = get_jwt()["jti"]
+        token_exp = get_jwt()["exp"]
+        user_id = get_jwt_identity()["user_id"]
+        add_token_blacklist(token, token_exp, user_id)
+        info.context["response"].set_cookie(key="access_token_cookie", value="", expires=0)
+        info.context["response"].set_cookie(key="refresh_token_cookie", value="", expires=0)
+        return Status(msg="success", error=0)
+
+
+    @strawberry.field
+    @jwt_required(refresh=True)
+    def refresh(self, info: Info) -> Status:
+        identity = get_jwt_identity()
+        access_token = create_access_token(identity=identity)
+        info.context["response"].set_cookie(key="access_token_cookie", value=access_token, max_age=2592000, httponly=True)
+        return Status(msg="success", error=0)
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)

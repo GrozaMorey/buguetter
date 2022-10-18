@@ -2,8 +2,12 @@ import time
 import calendar
 import psycopg2.extras
 from app import db, User, Jwt, Post, Tags, db_config, logger, Comment
-from flask_jwt_extended import get_jwt_identity
+from flask import make_response, Response
 from psycopg2 import pool
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, \
+    set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
+
 
 DB_HOST = db_config["DB_HOST"]
 DB_NAME = db_config["DB_NAME"]
@@ -622,3 +626,38 @@ def get_user_follow(user_name):
         return result
     except Exception as e:
         return f"Ошибка запроса {e}"
+
+
+def register(login, name, password):
+    logger.info("register run")
+    try:
+        _hashed_password = generate_password_hash(password)
+        if db.session.query(User.id).filter_by(login=login).first():
+            return "error 4"
+        add_user(login, name, _hashed_password)
+        logger.info("register success")
+        return "success"
+    except Exception as error:
+        logger.error(f"register error {error}")
+
+
+def loging(login, password):
+    logger.info("login run")
+    try:
+        if db.session.query(User.id).filter_by(login=login).first():
+            for i in db.session.query(User.password).filter_by(login=login).first():
+                if check_password_hash(i, password) is True:
+                    account = db.session.query(User.id,User.password).filter_by(login=login).first()
+                    identify = {
+                        "user_id": account[0],
+                        "username": account[1]
+                    }
+                    token = create_access_token(identity=identify)
+                    refresh_token = create_refresh_token(identity=identify)
+                    logger.info("login success")
+                    return token, refresh_token
+            return {"msg": "error", "error": 2, "paylode": None}
+        return {"msg": "error", "error": 1, "paylode": None}
+    except Exception as error:
+        logger.error(f"login error/ {error}")
+        return False
