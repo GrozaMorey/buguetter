@@ -108,24 +108,23 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.field
-    def register(self,login: str, name: str, password: str) -> Union[Status, Users_Realationship]:
+    def register(self,login: str, name: str, password: str) -> Users_Realationship:
         if register(login, name, password) is False:
-            return Status(msg="error", error="1")
+            raise Exception("login already exists")
         user = User.query.filter_by(login=login).first()
-        return Users_Realationship(id=user.id, name=user.name, date=user.date, follower=user.follower,
-                                   following=user.following)
+        return user
 
 
     @strawberry.field
-    def login(self, login: str, password: str, info:Info) -> Union[Status, Users_Realationship]:
+    def login(self, login: str, password: str, info: Info) -> Users_Realationship:
         tokens = loging(login, password)
-        if len(tokens) == 3:
-            return Status(msg=tokens["msg"], error=tokens["error"])
+        print(len(tokens))
+        if len(tokens) != 2:
+            raise Exception("incorrect login or password")
         info.context["response"].set_cookie(key="access_token_cookie", value=tokens[0], max_age=2592000, httponly=True)
         info.context["response"].set_cookie(key="refresh_token_cookie", value=tokens[1], max_age=2592000, httponly=True)
-        user = User.query.filter_by(login=login).one()
-        return Users_Realationship(id=user.id, name=user.name, date=user.date,
-                                   follower=user.follower, following=user.following)
+        user = User.query.filter_by(login=login).first()
+        return user
 
     @strawberry.field
     @jwt_required()

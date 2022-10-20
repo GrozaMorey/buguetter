@@ -654,8 +654,8 @@ def loging(login, password):
                     refresh_token = create_refresh_token(identity=identify)
                     logger.info("login success")
                     return token, refresh_token
-            return {"msg": "error", "error": 2, "paylode": None}
-        return {"msg": "error", "error": 1, "paylode": None}
+            return "error"
+        return "error"
     except Exception as error:
         logger.error(f"login error/ {error}")
         return False
