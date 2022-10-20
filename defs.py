@@ -2,11 +2,9 @@ import time
 import calendar
 import psycopg2.extras
 from app import db, User, Jwt, Post, Tags, db_config, logger, Comment
-from flask import make_response, Response
 from psycopg2 import pool
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, \
-    set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
+from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, get_jwt, jwt_required
 
 
 DB_HOST = db_config["DB_HOST"]
@@ -633,10 +631,10 @@ def register(login, name, password):
     try:
         _hashed_password = generate_password_hash(password)
         if db.session.query(User.id).filter_by(login=login).first():
-            return "error 4"
+            return False
         add_user(login, name, _hashed_password)
         logger.info("register success")
-        return "success"
+        return True
     except Exception as error:
         logger.error(f"register error {error}")
 

@@ -3,12 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
-from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from loguru import logger
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, create_refresh_token, get_jwt, \
-    set_refresh_cookies, set_access_cookies, unset_access_cookies, unset_jwt_cookies
 
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -75,6 +72,7 @@ user_user_following = db.Table("user_user_following",
                      db.Column('following_user_id', db.Integer, db.ForeignKey('users.id'))
                                )
 
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -83,7 +81,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     followers = db.Column(db.Integer, default=0)
     count_of_following = db.Column(db.Integer, default=0)
-    deleted = db.Column(db.Integer, default=0)
+    deleted = db.Column(db.Boolean, default=False)
     date = db.Column(db.Integer)
     post = db.relationship('Post', backref='post')
     jwt = db.relationship('Jwt', backref='black_jwt')
@@ -94,7 +92,7 @@ class User(db.Model):
                                 secondaryjoin=(user_user_following.c.following_user_id == id),
                                 backref="follower")
     comment = db.relationship('Comment', backref='comment_user_id')
-    user_post_likes = db.relationship('Post', secondary=user_post_likes, backref="post_likes")
+    user_post_likes = db.relationship('Post', secondary=user_post_likes, backref="user_likes")
 
     def __init__(self, login, name, password, date):
         self.login = login
