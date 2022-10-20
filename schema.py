@@ -75,13 +75,19 @@ class Query:
             case "profile":
                 return Post.query.filter_by(author=id).offset(offset).limit(limit).all()
             case "profile_likes":
-                user = User.query.filter_by(id=id).one()
+                user = User.query.filter_by(id=id).first()
                 return user.user_post_likes
             case "profile_comments":
-                user = User.query.filter_by(id=id).one()
+                user = User.query.filter_by(id=id).first()
                 comment = user.comment
                 return comment
-        return Post.query.order_by(Post.date.desc()).offset(offset).limit(limit).all()
+        user_id = get_jwt_identity()["user_id"]
+        user = db.session.query(User).filter(id == user_id).first()
+        post_id = user.post_seen
+        value_id = []
+        for i in post_id:
+            value_id.append(i.id)
+        return Post.query.order_by(Post.date.desc()).where(~Post.id.in_(value_id)).offset(offset).limit(limit).all()
 
 
     @strawberry.field
