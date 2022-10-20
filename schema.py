@@ -1,5 +1,5 @@
 import strawberry
-from app import db, user_post_likes, Post, User, Tags, Comment
+from app import db, user_post_likes, Post, User, Tags, Comment, user_comment_likes
 from defs import jwt_required, get_jwt_identity, get_jwt, register,\
     add_token_blacklist, create_access_token, time_now, loging
 from typing import Union, Optional, List
@@ -33,6 +33,9 @@ class Comments:
     post_id: int
     author_id: int
     date: int
+    def get_relation_of_table(self):
+        return db.session.query(user_comment_likes).join(Comment).filter_by(id=self.id).all()
+    likes: List[Reaction] = strawberry.field(resolver=get_relation_of_table)
 
 
 @strawberry.type
@@ -207,29 +210,49 @@ class Mutation:
 
     @strawberry.field
     @jwt_required()
-    def add_reaction(self, reaction: str, post_id: int) -> Posts:
+    def add_reaction(self, reaction: str, selection_id: int, select: str) -> Posts:
         user_id = get_jwt_identity()["user_id"]
-        query = db.session.query(user_post_likes).\
-            filter(user_post_likes.c.post_id == post_id, user_post_likes.c.post_id == post_id)
-        post = Post.query.filter_by(id=post_id).first()
-        user = User.query.filter_by(id=user_id).first()
-        user.user_post_likes.append(post)
-        if not query.first():
+        if select == "post":
+            post = Post.query.filter_by(id=selection_id).first()
+            query = db.session.query(user_post_likes). \
+                filter(user_post_likes.c.post_id == selection_id, user_post_likes.c.user_id == user_id)
+            user = User.query.filter_by(id=user_id).first()
+            user.user_post_likes.append(post)
+            if not query.first():
+                db.session.commit()
+            query.update({user_post_likes.c.reaction: reaction})
             db.session.commit()
-        query.update({user_post_likes.c.reaction: reaction})
-        db.session.commit()
-        post = Post.query.filter_by(id=post_id).first()
-        return post
+            return post
+        else:
+            comment = Comment.query.filter_by(id=selection_id).first()
+            post = Post.query.filter_by(id=comment.post_id).first()
+            query = db.session.query(user_comment_likes). \
+                filter(user_comment_likes.c.comment_id == selection_id, user_comment_likes.c.user_id == user_id)
+            user = User.query.filter_by(id=user_id).first()
+            user.user_comment_likes.append(comment)
+            if not query.first():
+                db.session.commit()
+            query.update({user_comment_likes.c.reaction: reaction})
+            db.session.commit()
+            return post
 
     @strawberry.field
     @jwt_required()
-    def delete_reaction(self, post_id: int) -> Posts:
+    def delete_reaction(self, selection_id: int, select: str) -> Posts:
         user_id = get_jwt_identity()["user_id"]
-        reaction = User.query.filter_by(id=user_id).first()
-        post_id = Post.query.filter_by(id=post_id).first()
-        reaction.user_post_likes.remove(post_id)
-        db.session.commit()
-        return Post.query.filter_by(id=post_id).first()
+        if select == "post":
+            reaction = User.query.filter_by(id=user_id).first()
+            post_id = Post.query.filter_by(id=selection_id).first()
+            reaction.user_post_likes.remove(post_id)
+            db.session.commit()
+            return post_id
+        else:
+            comment = Comment.query.filter_by(id=selection_id).first()
+            post = Post.query.filter_by(id=comment.post_id).first()
+            reaction = User.query.filter_by(id=user_id).first()
+            reaction.user_comment_likes.remove(comment)
+            db.session.commit()
+            return post
 
     @strawberry.field
     @jwt_required()
