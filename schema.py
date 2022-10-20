@@ -1,5 +1,5 @@
 import strawberry
-from app import db, user_post_likes, Post, User, Tags
+from app import db, user_post_likes, Post, User, Tags, Comment
 from defs import jwt_required, get_jwt_identity, get_jwt, register,\
     add_token_blacklist, create_access_token, time_now, loging
 from typing import Union, Optional, List
@@ -27,7 +27,7 @@ class Reaction:
 
 
 @strawberry.type
-class Comment:
+class Comments:
     id: int
     text: str
     post_id: int
@@ -41,7 +41,7 @@ class Posts:
     text: str
     date: int
     author: str
-    comment: List[Comment]
+    comment: List[Comments]
     author_id: int
     post_id: int
     def get_relation_of_table(self):
@@ -217,7 +217,6 @@ class Mutation:
         if not query.first():
             db.session.commit()
         query.update({user_post_likes.c.reaction: reaction})
-        db.session.flush()
         db.session.commit()
         post = Post.query.filter_by(id=post_id).first()
         return post
@@ -251,6 +250,25 @@ class Mutation:
         user.deleted = delete
         db.session.commit()
         return Status(msg="success", error=0)
+
+
+    @strawberry.field
+    @jwt_required()
+    def add_comment(self, text: str, post_id: int) -> Posts:
+        user_id = get_jwt_identity()["user_id"]
+        date = time_now()
+        comment = Comment(text, post_id, user_id, date)
+        db.session.add(comment)
+        db.session.commit()
+        return Post.query.filter_by(id=post_id).first()
+
+    @strawberry.field
+    @jwt_required()
+    def delete_comment(self, comment_id: int, post_id: int) -> Posts:
+        comment = db.session.query(Comment).filter_by(id=comment_id).first()
+        db.session.delete(comment)
+        db.session.commit()
+        return Post.query.filter_by(id=post_id).first()
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
