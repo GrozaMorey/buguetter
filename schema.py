@@ -160,10 +160,10 @@ class Mutation:
 
     @strawberry.field
     @jwt_required()
-    def follow(self, follow_login: str) -> Users_Realationship:
+    def follow(self, follow_id: int) -> Users_Realationship:
         user_id = get_jwt_identity()["user_id"]
         user = User.query.filter_by(id=user_id).first()
-        following = User.query.filter_by(login=follow_login).first()
+        following = User.query.filter_by(id=follow_id).first()
         if following in user.following:
             db.session.commit()
             return user
@@ -175,10 +175,10 @@ class Mutation:
 
     @strawberry.field
     @jwt_required()
-    def unfollow(self, follow_login: str) -> Users_Realationship:
+    def unfollow(self, follow_id: int) -> Users_Realationship:
         user_id = get_jwt_identity()["user_id"]
         user = User.query.filter_by(id=user_id).first()
-        following = User.query.filter_by(login=follow_login).first()
+        following = User.query.filter_by(id=follow_id).first()
         if following not in user.following:
             return user
         user.following.remove(following)
