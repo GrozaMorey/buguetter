@@ -1,8 +1,7 @@
 import strawberry
-from app import db, user_post_likes, Post, User, Tags
-from defs import jwt_required, get_jwt_identity, get_jwt, register,\
-    add_token_blacklist, create_access_token, time_now, loging
-from typing import Union, Optional, List
+from app import db, user_post_likes, Post, User, Tags, Comment, user_comment_likes
+from defs import *
+from typing import Optional, List
 from strawberry.types import Info
 
 
@@ -27,12 +26,15 @@ class Reaction:
 
 
 @strawberry.type
-class Comment:
+class Comments:
     id: int
     text: str
     post_id: int
     author_id: int
     date: int
+    def get_relation_of_table(self):
+        return db.session.query(user_comment_likes).join(Comment).filter_by(id=self.id).all()
+    likes: List[Reaction] = strawberry.field(resolver=get_relation_of_table)
 
 
 @strawberry.type
@@ -41,7 +43,7 @@ class Posts:
     text: str
     date: int
     author: str
-    comment: List[Comment]
+    comment: List[Comments]
     author_id: int
     post_id: int
     def get_relation_of_table(self):
@@ -69,25 +71,7 @@ class Query:
     @strawberry.field
     @jwt_required()
     def feed(self, offset: int, limit: int, selection: str, id: Optional[int]) -> List[Posts]:
-        if id == 0:
-            id = get_jwt_identity()["user_id"]
-        match selection:
-            case "profile":
-                return Post.query.filter_by(author=id).offset(offset).limit(limit).all()
-            case "profile_likes":
-                user = User.query.filter_by(id=id).first()
-                return user.user_post_likes
-            case "profile_comments":
-                user = User.query.filter_by(id=id).first()
-                comment = user.comment
-                return comment
-        user_id = get_jwt_identity()["user_id"]
-        user = db.session.query(User).filter(id == user_id).first()
-        post_id = user.post_seen
-        value_id = []
-        for i in post_id:
-            value_id.append(i.id)
-        return Post.query.order_by(Post.date.desc()).where(~Post.id.in_(value_id)).offset(offset).limit(limit).all()
+        return feed(offset, limit, selection, id)
 
 
     @strawberry.field
@@ -105,27 +89,30 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.field
-    def register(self,login: str, name: str, password: str) -> Union[Status, Users_Realationship]:
+    def register(self,login: str, name: str, password: str, info: Info) -> Users_Realationship:
         if register(login, name, password) is False:
-            return Status(msg="error", error="1")
-        user = User.query.filter_by(login=login).first()
-        return Users_Realationship(id=user.id, name=user.name, date=user.date, follower=user.follower,
-                                   following=user.following)
-
-
-    @strawberry.field
-    def login(self, login: str, password: str, info:Info) -> Union[Status, Users_Realationship]:
+            raise Exception("login already exists")
         tokens = loging(login, password)
-        if len(tokens) == 3:
-            return Status(msg=tokens["msg"], error=tokens["error"])
+        if len(tokens) != 2:
+            raise Exception("incorrect login or password")
         info.context["response"].set_cookie(key="access_token_cookie", value=tokens[0], max_age=2592000, httponly=True)
         info.context["response"].set_cookie(key="refresh_token_cookie", value=tokens[1], max_age=2592000, httponly=True)
-        user = User.query.filter_by(login=login).one()
-        return Users_Realationship(id=user.id, name=user.name, date=user.date,
-                                   follower=user.follower, following=user.following)
+        user = User.query.filter_by(login=login).first()
+        return user
+
 
     @strawberry.field
-    @jwt_required()
+    def login(self, login: str, password: str, info: Info) -> Users_Realationship:
+        tokens = loging(login, password)
+        if len(tokens) != 2:
+            raise Exception("incorrect login or password")
+        info.context["response"].set_cookie(key="access_token_cookie", value=tokens[0], max_age=2592000, httponly=True)
+        info.context["response"].set_cookie(key="refresh_token_cookie", value=tokens[1], max_age=2592000, httponly=True)
+        user = User.query.filter_by(login=login).first()
+        return user
+
+    @strawberry.field
+    @jwt_required(refresh=True)
     def logout(self, info: Info) -> Status:
         token = get_jwt()["jti"]
         token_exp = get_jwt()["exp"]
@@ -149,108 +136,63 @@ class Mutation:
     @jwt_required()
     def seen(self, post_id: List[int]) -> Status:
         user_id = get_jwt_identity()["user_id"]
-        user = User.query.filter_by(id=user_id).first()
-        for i in post_id:
-            post = Post.query.filter_by(id=i).first()
-            user.post_seen.append(post)
-            db.session.commit()
+        seen(user_id, post_id)
         return Status(msg="success", error=0)
 
     @strawberry.field
     @jwt_required()
-    def follow(self, follow_login: str) -> Users_Realationship:
+    def follow(self, follow_id: int) -> Users_Realationship:
         user_id = get_jwt_identity()["user_id"]
-        user = User.query.filter_by(id=user_id).first()
-        following = User.query.filter_by(login=follow_login).first()
-        if following in user.following:
-            db.session.commit()
-            return user
-        user.following.append(following)
-        user.count_of_following += 1
-        following.followers += 1
-        db.session.commit()
-        return user
+        return follow(user_id, follow_id)
 
     @strawberry.field
     @jwt_required()
-    def unfollow(self, follow_login: str) -> Users_Realationship:
+    def unfollow(self, follow_id: int) -> Users_Realationship:
         user_id = get_jwt_identity()["user_id"]
-        user = User.query.filter_by(id=user_id).first()
-        following = User.query.filter_by(login=follow_login).first()
-        if following not in user.following:
-            return user
-        user.following.remove(following)
-        user.count_of_following -= 1
-        following.followers -= 1
-        db.session.commit()
-        return user
+        return unfollow(user_id, follow_id)
 
     @strawberry.field
     @jwt_required()
     def add_post(self, text: str, tags: Optional[List[str]]) -> Posts:
         user_id = get_jwt_identity()["user_id"]
-        date = time_now()
-        post = Post(text, date, user_id)
-        db.session.add(post)
-        for i in tags:
-            if Tags.query.filter_by(text=i).first():
-                continue
-            tag = Tags(i)
-            db.session.add(tag)
-        post = db.session.query(Post).order_by(Post.id.desc()).where(Post.author == user_id).first()
-        for i in tags:
-            tag = Tags.query.filter_by(text=i).first()
-            post.tags.append(tag)
-        db.session.commit()
-
-        return post
+        return add_post(user_id, text, tags)
 
     @strawberry.field
     @jwt_required()
-    def add_reaction(self, reaction: str, post_id: int) -> Posts:
+    def add_reaction(self, reaction: str, selection_id: int, select: str) -> Posts:
         user_id = get_jwt_identity()["user_id"]
-        query = db.session.query(user_post_likes).\
-            filter(user_post_likes.c.post_id == post_id, user_post_likes.c.post_id == post_id)
-        post = Post.query.filter_by(id=post_id).first()
-        user = User.query.filter_by(id=user_id).first()
-        user.user_post_likes.append(post)
-        if not query.first():
-            db.session.commit()
-        query.update({user_post_likes.c.reaction: reaction})
-        db.session.flush()
-        db.session.commit()
-        post = Post.query.filter_by(id=post_id).first()
-        return post
+        return add_reaction(user_id, select, selection_id, reaction)
 
     @strawberry.field
     @jwt_required()
-    def delete_reaction(self, post_id: int) -> Posts:
+    def delete_reaction(self, selection_id: int, select: str) -> Posts:
         user_id = get_jwt_identity()["user_id"]
-        reaction = User.query.filter_by(id=user_id).first()
-        post_id = Post.query.filter_by(id=post_id).first()
-        reaction.user_post_likes.remove(post_id)
-        db.session.commit()
-        return Post.query.filter_by(id=post_id).first()
+        return delete_reaction(user_id, select, selection_id)
 
     @strawberry.field
     @jwt_required()
     def delete_post(self, post_id: int) -> Status:
-        post = db.session.query(Post).filter_by(id=post_id).first()
-        post.likes.clear()
-        post.tags.clear()
-        post.comment.clear()
-        db.session.delete(post)
-        db.session.commit()
+        delete_post(post_id)
         return Status(msg="success", error=0)
 
     @strawberry.field
     @jwt_required()
     def delete_user(self, delete: bool) -> Status:
         user_id = get_jwt_identity()["user_id"]
-        user = User.query.filter_by(id=user_id).first()
-        user.deleted = delete
-        db.session.commit()
+        delete_user(user_id, delete)
         return Status(msg="success", error=0)
+
+
+    @strawberry.field
+    @jwt_required()
+    def add_comment(self, text: str, post_id: int) -> Posts:
+        user_id = get_jwt_identity()["user_id"]
+        return add_commet(user_id, text, post_id)
+
+    @strawberry.field
+    @jwt_required()
+    def delete_comment(self, comment_id: int, post_id: int) -> Posts:
+        return delete_comment(comment_id, post_id)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

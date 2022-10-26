@@ -73,6 +73,12 @@ user_user_following = db.Table("user_user_following",
                                )
 
 
+user_comment_likes = db.Table("user_comment_likes",
+                     db.Column('comment_id', db.Integer, db.ForeignKey('comment.id')),
+                     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                     db.Column('reaction', db.String)
+                     )
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -93,6 +99,7 @@ class User(db.Model):
                                 backref="follower")
     comment = db.relationship('Comment', backref='comment_user_id')
     user_post_likes = db.relationship('Post', secondary=user_post_likes, backref="user_likes")
+    user_comment_likes = db.relationship('Comment', secondary=user_comment_likes, backref="user_likes_comment")
 
     def __init__(self, login, name, password, date):
         self.login = login
@@ -160,6 +167,7 @@ class Comment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     date = db.Column(db.Integer)
+    likes = db.relationship('User', secondary=user_comment_likes, backref="user_like")
 
     def __init__(self, text, post_id, author_id, date):
         self.text = text
