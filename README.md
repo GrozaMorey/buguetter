@@ -16,3 +16,14 @@ flask db migrate
 flask db upgrade
 ```
 Запускаешь `index.py` и далее следуешь схеме
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Stack:
+Flask
+Flask-SQLALCHEMY
+Flask-JWT-Extended
+Flask-Migrate
+Loguru
+Postgresql
+Strawberry GraphQL
+
