@@ -19,11 +19,11 @@ flask db upgrade
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 Stack:
-Flask
-Flask-SQLALCHEMY
-Flask-JWT-Extended
-Flask-Migrate
-Loguru
-Postgresql
+Flask\n
+Flask-SQLALCHEMY\n
+Flask-JWT-Extended\n
+Flask-Migrate\n
+Loguru\n
+Postgresql\n
 Strawberry GraphQL
 
