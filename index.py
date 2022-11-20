@@ -48,19 +48,19 @@ def unauthorized_loader_callback(x):
     return response
 
 
-# @jwt.token_in_blocklist_loader
-# def check_token_blocklist(jwt_headers, jwt_data):
-#     logger.info("blacklist jwt loader run")
-#     jti = jwt_data["jti"]
-#     tokens = get_blocklist_db()
-#     if tokens is not None:
-#         for i in tokens:
-#             if jti in i["jti"]:
-#                 return True
-#     return False
+@jwt.token_in_blocklist_loader
+def check_token_blocklist(jwt_headers, jwt_data):
+    logger.info("blacklist jwt loader run")
+    jti = jwt_data["jti"]
+    tokens = get_blocklist_db()
+    if tokens is not None:
+        for i in tokens:
+            if jti in i.jwt:
+                return True
+    return False
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True))
 
 # TODO: Включить ssl_context='adhoc' перед деплоем
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

@@ -5,11 +5,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, get_jwt, jwt_required
 
 
-@logger.catch()
 def add_token_blacklist(jti, token_exp, user_id):
     logger.info("add_token_blacklist run")
     try:
-        jwt = Jwt(jti, token_exp, user_id)
+        jwt = Jwt(jti, int(token_exp), user_id)
         db.session.add(jwt)
         db.session.commit()
         logger.info("add_token_blacklist success")
@@ -18,30 +17,23 @@ def add_token_blacklist(jti, token_exp, user_id):
         logger.error(f"add_token_blacklist error/ args = {jti, token_exp, user_id}  {e}")
         return False
 
-#TODO переписать на алхимии
-# @logger.catch()
-# def get_blocklist_db():
-#     logger.info("get_blocklist_db run")
-#     try:
-#         connection = postgres_pool.getconn()
-#         cursor = connection.cursor()
-#         cursor.execute("SELECT * FROM invalid_tokens")
-#         tokens = cursor.fetchall()
-#         result = [{"id": i[0], "jti": i[1], "date": i[2], "user_id": i[3]} for i in tokens]
-#         time_stump = time_now()
-#         for x in result:
-#             if int(x["date"]) <= time_stump:
-#                 cursor.execute(f'DELETE FROM invalid_tokens WHERE id = {x["id"]}')
-#                 connection.commit()
-#         logger.info("get_blocklist_db success")
-#         cursor.close()
-#         postgres_pool.putconn(connection)
-#         return result
-#     except Exception as e:
-#         logger.error(f"get_blocklist_db error/ {e}")
+
+def get_blocklist_db():
+    logger.info("get_blocklist_db run")
+    try:
+        jwt = Jwt.query.all()
+        time_stump = time_now()
+        for x in jwt:
+            if x.date <= time_stump:
+                delete = Jwt.query.filter_by(id=x.id).delete()
+                db.session.add(delete)
+        db.session.commit()
+        logger.info("get_blocklist_db success")
+        return jwt
+    except Exception as e:
+        logger.error(f"get_blocklist_db error/ {e}")
 
 
-@logger.catch()
 def time_now():
     logger.info("time_now run")
     try:

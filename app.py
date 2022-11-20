@@ -112,7 +112,7 @@ class Jwt(db.Model):
     __tablename__ = "invalid_tokens"
     id = db.Column(db.Integer, primary_key=True)
     jwt = db.Column(db.String, nullable=False)
-    date = db.Column(db.String, nullable=False)
+    date = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     def __init__(self, jwt, date, user_id):

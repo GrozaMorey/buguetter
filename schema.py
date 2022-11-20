@@ -32,8 +32,10 @@ class Comments:
     post_id: int
     author_id: int
     date: int
+
     def get_relation_of_table(self):
         return db.session.query(user_comment_likes).join(Comment).filter_by(id=self.id).all()
+
     likes: List[Reaction] = strawberry.field(resolver=get_relation_of_table)
 
 
@@ -46,8 +48,10 @@ class Posts:
     comment: List[Comments]
     author_id: int
     post_id: int
+
     def get_relation_of_table(self):
         return db.session.query(user_post_likes).join(Post).filter_by(id=self.id).all()
+
     likes: List[Reaction] = strawberry.field(resolver=get_relation_of_table)
 
 
@@ -67,19 +71,16 @@ class Query:
             id = get_jwt_identity()["user_id"]
         return User.query.filter_by(id=id).first()
 
-
     @strawberry.field
     @jwt_required()
     def feed(self, offset: int, limit: int, selection: str, id: Optional[int]) -> List[Posts]:
         return feed(offset, limit, selection, id)
-
 
     @strawberry.field
     def status(self) -> Status:
         user = User.query.filter_by(id=1).first()
         if user:
             return Status(msg="success", error=0)
-
 
     @strawberry.field
     def find(self, id: int) -> Posts:
@@ -89,7 +90,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.field
-    def register(self,login: str, name: str, password: str, info: Info) -> Users_Realationship:
+    def register(self, login: str, name: str, password: str, info: Info) -> Users_Realationship:
         if register(login, name, password) is False:
             raise Exception("login already exists")
         tokens = loging(login, password)
@@ -99,7 +100,6 @@ class Mutation:
         info.context["response"].set_cookie(key="refresh_token_cookie", value=tokens[1], max_age=2592000, httponly=True)
         user = User.query.filter_by(login=login).first()
         return user
-
 
     @strawberry.field
     def login(self, login: str, password: str, info: Info) -> Users_Realationship:
@@ -121,7 +121,6 @@ class Mutation:
         info.context["response"].set_cookie(key="access_token_cookie", value="", expires=0)
         info.context["response"].set_cookie(key="refresh_token_cookie", value="", expires=0)
         return Status(msg="success", error=0)
-
 
     @strawberry.field
     @jwt_required(refresh=True)
@@ -181,7 +180,6 @@ class Mutation:
         user_id = get_jwt_identity()["user_id"]
         delete_user(user_id, delete)
         return Status(msg="success", error=0)
-
 
     @strawberry.field
     @jwt_required()
