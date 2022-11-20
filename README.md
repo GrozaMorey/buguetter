@@ -18,12 +18,12 @@ flask db upgrade
 Запускаешь `index.py` и далее следуешь схеме
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-Stack:
-Flask\n
-Flask-SQLALCHEMY\n
-Flask-JWT-Extended\n
-Flask-Migrate\n
-Loguru\n
-Postgresql\n
+Stack:<br />
+Flask<br />
+Flask-SQLALCHEMY<br />
+Flask-JWT-Extended<br />
+Flask-Migrate<br />
+Loguru<br />
+Postgresql<br />
 Strawberry GraphQL
 
